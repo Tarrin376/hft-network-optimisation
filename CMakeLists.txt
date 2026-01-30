@@ -24,8 +24,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(benchmark)
 
 # App executable
-add_executable(hft src/main.cpp)
-target_link_libraries(hft PRIVATE)
+file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE HEADERS include/*.h)
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+target_link_libraries(${PROJECT_NAME} PRIVATE)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 # Unit tests with Catch2
 add_executable(my_tests tests/test_main.cpp)

@@ -1,6 +1,12 @@
 #include <iostream>
+#include "test.h"
 
 int main() {
     std::cout << "Testing" << '\n';
-    return 1;
+    std::cout << foo() << '\n';
+    return 0;
+}
+
+int foo() {
+    return 5;
 }
