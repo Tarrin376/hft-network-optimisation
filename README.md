@@ -39,7 +39,8 @@ where exact optimisation is computationally intractable.
 > cd hft-network-optimization
 # Create build files using cmake
 > cmake -B build
-# Build the repo. **optional but recommended: Include -j<num_processes> to allocate more processor cores to speed up build times.
+# Build the repo. 
+## **optional but recommended** Include -j<num_processes> to allocate more CPU cores to speed up build times.
 > cmake --build build
 ```
 
