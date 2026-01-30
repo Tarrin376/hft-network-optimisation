@@ -44,7 +44,7 @@ where exact optimisation is computationally intractable.
 > cmake --build build
 ```
 
-## Running tests using the Catch2 library
+## Running tests using Catch2
 ```bash
 # Check out the build directory
 > cd build
@@ -52,7 +52,7 @@ where exact optimisation is computationally intractable.
 > ./my_tests
 ```
 
-## Running benchmarks using the Google Benchmark library
+## Running benchmarks using Google Benchmark
 ```bash
 # Check out the build directory
 > cd build
