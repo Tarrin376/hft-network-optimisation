@@ -1,12 +1,15 @@
 #include <iostream>
-#include "test.h"
+
+#include "graph.h"
 
 int main() {
-    std::cout << "Testing" << '\n';
-    std::cout << foo() << '\n';
-    return 0;
-}
+    Graph graph{};
+    graph.addEdge({ 1, 2, 3, 1, 2.1, 100 });
 
-int foo() {
-    return 5;
+    const std::vector<int>& edges{ graph.outgoingEdges(2) };
+    for (const auto edge : edges) {
+        std::cout << edge << '\n';
+    }
+
+    return 0;
 }
