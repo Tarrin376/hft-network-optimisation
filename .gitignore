@@ -1,4 +1,4 @@
 .vscode
 build
-test_graph.txt
-test_orders.txt
+test_graph.csv
+test_orders.csv

@@ -14,16 +14,23 @@ struct Edge {
     std::uint64_t lease_cost{};
 };
 
+struct Node {
+    int id{};
+    bool is_server{};
+    std::vector<int> edges{};
+};
+
 class Graph {
 public:
-    void add_edge(const Edge& edge);
+    void add_edge(const Edge& edge, bool source_is_server);
     const Edge& get_edge(int edgeId);
+    const Node& get_node(int nodeId);
     const std::vector<int>& outgoing(int node) const;
     int num_nodes() const;
 
 private:
-    std::unordered_map<int, std::vector<int>> m_adj_list{};
     std::unordered_map<int, Edge> m_edges{};
+    std::unordered_map<int, Node> m_nodes{};
 };
 
 #endif

@@ -13,6 +13,7 @@ public:
 private:
     std::string m_line{};
     std::ifstream m_file{};
+    bool m_first_line{ true };
 };
 
 #endif

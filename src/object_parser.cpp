@@ -32,7 +32,10 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
         std::getline(ss, token, ',');
         edge.lease_cost = std::stoull(token);
 
-        graph.add_edge(edge);
+        std::getline(ss, token, ',');
+        bool source_is_server = std::stoi(token);
+
+        graph.add_edge(edge, source_is_server);
     }
 
     return std::make_unique<Graph>(graph);
