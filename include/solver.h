@@ -2,22 +2,17 @@
 #define SOLVER_H
 
 #include <vector>
-#include "graph.h"
 
-struct ExpectedOrders {
-    int server{};
-    int exchange{};
-    int num_orders{};
-    int planning_horizon{};
-};
+#include "order_opportunity.h"
+#include "graph.h"
 
 class Solver {
 public:
     virtual ~Solver() = default;
 
-    virtual void run(
+    virtual void solve(
         const Graph& graph, 
-        const std::vector<ExpectedOrders>& expectedOrders
+        const std::vector<OrderOpportunity>& order_opportunities
     ) = 0;
 };
 

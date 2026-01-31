@@ -16,13 +16,13 @@ struct Edge {
 
 class Graph {
 public:
-    void addEdge(const Edge& edge);
-    const Edge& getEdge(int edgeId);
-    const std::vector<int>& outgoingEdges(int node) const;
-    int numNodes() const;
+    void add_edge(const Edge& edge);
+    const Edge& get_edge(int edgeId);
+    const std::vector<int>& outgoing(int node) const;
+    int num_nodes() const;
 
 private:
-    std::unordered_map<int, std::vector<int>> m_adjList{};
+    std::unordered_map<int, std::vector<int>> m_adj_list{};
     std::unordered_map<int, Edge> m_edges{};
 };
 
