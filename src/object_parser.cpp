@@ -15,7 +15,7 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        Edge edge{ id };
+        Edge edge{ ++id };
         
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);

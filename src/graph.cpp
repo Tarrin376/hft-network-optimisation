@@ -1,19 +1,21 @@
 #include <vector>
 #include <cassert>
+#include <iostream>
+#include <algorithm>
 
 #include "graph.h"
 
 void Graph::add_edge(const Edge& edge, bool source_is_server) {
     if (!m_nodes.contains(edge.source)) {
-        m_nodes[edge.source] = Node{ .id = edge.source, .is_server = source_is_server };
+        m_nodes.insert({ edge.source, Node{ .id = edge.source, .is_server = source_is_server } });
     }
 
     if (!m_nodes.contains(edge.dest)) {
-        m_nodes[edge.dest] = Node{ .id = edge.dest };
+        m_nodes.insert({ edge.dest, Node{ .id = edge.dest }});
     }
 
     m_nodes[edge.source].edges.push_back(edge.id);
-    m_edges[edge.id] = edge;
+    m_edges.insert({ edge.id, edge });
 }
 
 const Edge& Graph::get_edge(int edgeId) {
@@ -31,6 +33,13 @@ const std::vector<int>& Graph::outgoing(int node) const {
     return m_nodes.at(node).edges;
 }
 
-int Graph::num_nodes() const {
-    return static_cast<int>(m_nodes.size());
+const std::vector<int> Graph::get_edge_ids() const {
+    std::vector<int> edge_ids{};
+    
+    std::transform(m_edges.begin(), m_edges.end(), back_inserter(edge_ids), 
+        [](const std::pair<int, Edge> pair) { 
+            return pair.first; 
+        });
+    
+    return edge_ids;
 }

@@ -26,7 +26,7 @@ public:
     const Edge& get_edge(int edgeId);
     const Node& get_node(int nodeId);
     const std::vector<int>& outgoing(int node) const;
-    int num_nodes() const;
+    const std::vector<int> get_edge_ids() const;
 
 private:
     std::unordered_map<int, Edge> m_edges{};

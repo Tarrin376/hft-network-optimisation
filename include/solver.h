@@ -10,7 +10,7 @@ class Solver {
 public:
     virtual ~Solver() = default;
 
-    virtual void solve(
+    virtual double solve(
         const Graph& graph, 
         const std::vector<OrderOpportunity>& order_opportunities
     ) = 0;
