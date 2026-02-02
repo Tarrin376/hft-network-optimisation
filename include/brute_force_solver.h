@@ -17,17 +17,10 @@ public:
 private:
     int find_max_profit(const Graph& graph,
                         const std::vector<OrderOpportunity>& opportunities,
-                        std::vector<std::uint8_t> & selected_edges,
                         std::size_t index);
 
-    int calculate_total_profit(const Graph& graph,
-                               const std::vector<std::uint8_t>& selected_edges, 
-                               const std::vector<OrderOpportunity>& opportunities);
-
-    bool find_optimal_path(const Graph& graph, 
-                           const OrderOpportunity& opportunity, 
-                           const std::vector<std::uint8_t>& selected_edges);
-        
+    int calculate_total_profit(const Graph& graph, const std::vector<OrderOpportunity>& opportunities);
+    bool find_optimal_path(const Graph& graph, const OrderOpportunity& opportunity);
     void update_flow_path(int target_exchange, const std::vector<const Edge*>& parent_edge_buffer);
 
     std::vector<uint8_t> m_selected_edges{}; 

@@ -16,37 +16,33 @@ BruteForceSolver::BruteForceSolver(int max_order_profit, int max_latency)
 
 int BruteForceSolver::solve(const Graph& graph, const std::vector<OrderOpportunity>& opportunities) {
     std::size_t num_edges{ graph.get_num_edges() };
-    std::vector<std::uint8_t> selected_edges(num_edges, 0);
     m_selected_edges.assign(num_edges, false); 
 
-    auto max_profit{ find_max_profit(graph, opportunities, selected_edges, 0) };
+    auto max_profit{ find_max_profit(graph, opportunities, 0) };
     return max_profit;
 }
 
 int BruteForceSolver::find_max_profit(const Graph& graph,
                                       const std::vector<OrderOpportunity>& opportunities,
-                                      std::vector<std::uint8_t>& selected_edges,  
                                       std::size_t index) {
     if (index == graph.get_num_edges()) {
-        return calculate_total_profit(graph, selected_edges, opportunities);
+        return calculate_total_profit(graph, opportunities);
     }
 
-    selected_edges[index] = 1;
-    auto select_edge_profit{ find_max_profit(graph, opportunities, selected_edges, index + 1) };
+    m_selected_edges[index] = 1;
+    auto select_edge_profit{ find_max_profit(graph, opportunities, index + 1) };
 
-    selected_edges[index] = 0;
-    auto ignore_edge_profit{ find_max_profit(graph, opportunities, selected_edges, index + 1) };
+    m_selected_edges[index] = 0;
+    auto ignore_edge_profit{ find_max_profit(graph, opportunities, index + 1) };
 
     return std::max(select_edge_profit, ignore_edge_profit);
 }
 
-int BruteForceSolver::calculate_total_profit(const Graph& graph,
-                                             const std::vector<std::uint8_t>& selected_edges, 
-                                             const std::vector<OrderOpportunity>& opportunities) {
+int BruteForceSolver::calculate_total_profit(const Graph& graph, const std::vector<OrderOpportunity>& opportunities) {
     for (const auto& opportunity : opportunities) {
         m_path_flow.assign(graph.get_num_edges(), 0);
         for (int i = 0; i < opportunity.num_orders; ++i) {
-            bool found_path = find_optimal_path(graph, opportunity, selected_edges);
+            bool found_path = find_optimal_path(graph, opportunity);
             if (!found_path) {
                 return 0;
             }
@@ -54,8 +50,8 @@ int BruteForceSolver::calculate_total_profit(const Graph& graph,
     }
 
     int total_profit{ 0 };
-    for (const int edge_id : selected_edges) {
-        if (selected_edges[edge_id] == 1) {
+    for (const int edge_id : m_selected_edges) {
+        if (m_selected_edges[edge_id] == 1) {
             const Edge& edge{ graph.get_edge(edge_id) };
             int gross_profit{ m_max_order_profit * std::max(1 - edge.latency / m_max_latency, 0) };
             total_profit += gross_profit * m_path_flow.at(edge.id) - edge.lease_cost;
@@ -65,9 +61,7 @@ int BruteForceSolver::calculate_total_profit(const Graph& graph,
     return total_profit;
 }
 
-bool BruteForceSolver::find_optimal_path(const Graph& graph,
-                                         const OrderOpportunity& opportunity,   
-                                         const std::vector<std::uint8_t>& selected_edges) {
+bool BruteForceSolver::find_optimal_path(const Graph& graph, const OrderOpportunity& opportunity) {
     struct State {
         int latency;
         std::size_t node_id;
@@ -97,7 +91,7 @@ bool BruteForceSolver::find_optimal_path(const Graph& graph,
         }
 
         for (const auto& edge_id : graph.get_node(current.node_id).edges) {
-            if (selected_edges[edge_id] == 0) {
+            if (m_selected_edges[edge_id] == 0) {
                 continue;
             }
 
