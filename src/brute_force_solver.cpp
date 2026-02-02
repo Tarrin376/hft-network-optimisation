@@ -1,11 +1,10 @@
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 #include <functional>
 #include <utility>
-#include <optional>
 #include <queue>
 #include <limits>
+#include <cstdint>
+#include <iostream>
 
 #include "brute_force_solver.h"
 #include "order_opportunity.h"
@@ -16,50 +15,51 @@ BruteForceSolver::BruteForceSolver(int max_order_profit, int max_latency)
 : Solver{ max_order_profit, max_latency } {}
 
 int BruteForceSolver::solve(const Graph& graph, const std::vector<OrderOpportunity>& opportunities) {
-    auto& edge_ids{ graph.get_edge_ids() };
-    std::unordered_set<int> selected_edges{};
+    std::size_t num_edges{ graph.get_num_edges() };
+    std::vector<std::uint8_t> selected_edges(num_edges, 0);
+    m_selected_edges.assign(num_edges, false); 
 
-    auto max_profit{ find_max_profit(graph, edge_ids, opportunities, selected_edges, 0) };
+    auto max_profit{ find_max_profit(graph, opportunities, selected_edges, 0) };
     return max_profit;
 }
 
 int BruteForceSolver::find_max_profit(const Graph& graph,
-                                      const std::vector<int> edge_ids,
                                       const std::vector<OrderOpportunity>& opportunities,
-                                      std::unordered_set<int>& selected_edges,  
-                                      int index) {
-    if (index == edge_ids.size()) {
+                                      std::vector<std::uint8_t>& selected_edges,  
+                                      std::size_t index) {
+    if (index == graph.get_num_edges()) {
         return calculate_total_profit(graph, selected_edges, opportunities);
     }
 
-    selected_edges.insert(edge_ids.at(index));
-    auto select_edge_profit{ find_max_profit(graph, edge_ids, opportunities, selected_edges, index + 1) };
+    selected_edges[index] = 1;
+    auto select_edge_profit{ find_max_profit(graph, opportunities, selected_edges, index + 1) };
 
-    selected_edges.erase(edge_ids.at(index));
-    auto ignore_edge_profit{ find_max_profit(graph, edge_ids, opportunities, selected_edges, index + 1) };
+    selected_edges[index] = 0;
+    auto ignore_edge_profit{ find_max_profit(graph, opportunities, selected_edges, index + 1) };
 
     return std::max(select_edge_profit, ignore_edge_profit);
 }
 
 int BruteForceSolver::calculate_total_profit(const Graph& graph,
-                                             const std::unordered_set<int>& selected_edges, 
+                                             const std::vector<std::uint8_t>& selected_edges, 
                                              const std::vector<OrderOpportunity>& opportunities) {
-    std::unordered_map<int, int> path_flow{};
-    int total_profit{ 0 };
-
     for (const auto& opportunity : opportunities) {
+        m_path_flow.assign(graph.get_num_edges(), 0);
         for (int i = 0; i < opportunity.num_orders; ++i) {
-            bool found_path = find_optimal_path(graph, opportunity, selected_edges, path_flow);
+            bool found_path = find_optimal_path(graph, opportunity, selected_edges);
             if (!found_path) {
                 return 0;
             }
         }
     }
 
+    int total_profit{ 0 };
     for (const int edge_id : selected_edges) {
-        const Edge& edge{ graph.get_edge(edge_id) };
-        int net_profit{ m_max_order_profit * std::max(1 - edge.latency / m_max_latency, 0) };
-        total_profit += path_flow[edge.id] * net_profit - edge.lease_cost;
+        if (selected_edges[edge_id] == 1) {
+            const Edge& edge{ graph.get_edge(edge_id) };
+            int gross_profit{ m_max_order_profit * std::max(1 - edge.latency / m_max_latency, 0) };
+            total_profit += gross_profit * m_path_flow.at(edge.id) - edge.lease_cost;
+        }
     }
 
     return total_profit;
@@ -67,75 +67,64 @@ int BruteForceSolver::calculate_total_profit(const Graph& graph,
 
 bool BruteForceSolver::find_optimal_path(const Graph& graph,
                                          const OrderOpportunity& opportunity,   
-                                         const std::unordered_set<int>& selected_edges,
-                                         std::unordered_map<int, int>& path_flow) {
-    std::unordered_map<int, BruteForceSolver::LatencyPair> latency_costs{};
-    std::vector<int> node_ids{ graph.get_node_ids() };
-
-    for (const auto node : node_ids) {
-        latency_costs.insert({ node, { std::numeric_limits<int>::max(), nullptr }});
-    }
-
-    latency_costs[opportunity.server].latency = 0;
-
-    auto compare = [](std::pair<int, int>& a, std::pair<int, int>& b) { 
-        return a.first > b.first; 
+                                         const std::vector<std::uint8_t>& selected_edges) {
+    struct State {
+        int latency;
+        std::size_t node_id;
+        bool operator>(const State& other) const { return latency > other.latency; }
     };
+    
+    std::priority_queue<State, std::vector<State>, std::greater<State>> pq{};
+    std::size_t num_nodes{ graph.get_num_nodes() };
 
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, decltype(compare)> pq{};
-    pq.push({ 0, opportunity.server });
+    std::vector<int> min_latency_buffer(num_nodes, std::numeric_limits<int>::max());
+    std::vector<const Edge*> parent_edge_buffer(num_nodes, nullptr);
+
+    min_latency_buffer[opportunity.server] = 0;
+    pq.push({0, opportunity.server});
 
     while (!pq.empty()) {
-        const auto& current{ pq.top() };
-        const int latency{ current.first };
-        const int node_id{ current.second };
+        const State current = pq.top();
+        pq.pop();
 
-        if (node_id == opportunity.exchange) {
-            update_flow_path(latency_costs, path_flow, opportunity.exchange);
+        if (current.node_id == opportunity.exchange) {
+            update_flow_path(opportunity.exchange, parent_edge_buffer);
             return true;
         }
 
-        if (latency > latency_costs.at(node_id).latency) {
+        if (current.latency > min_latency_buffer[current.node_id]) {
             continue;
         }
 
-        const Node& node{ graph.get_node(node_id) };
-
-        for (const auto& edge_id : node.edges) {
-            const Edge& edge{ graph.get_edge(edge_id) };
-            if (!selected_edges.contains(edge.id)) {
+        for (const auto& edge_id : graph.get_node(current.node_id).edges) {
+            if (selected_edges[edge_id] == 0) {
                 continue;
             }
 
-            auto rate_limit_satisfied = [&path_flow, &opportunity, &edge]() {
-                return path_flow[edge.id] <= edge.rate_limit * opportunity.planning_horizon;
-            };
+            const Edge& edge = graph.get_edge(edge_id);
+            int current_flow = m_path_flow.at(edge.id);
             
-            BruteForceSolver::LatencyPair& latency_pair{ latency_costs.at(edge.dest) };
-            int updated_latency{ latency + edge.latency };
+            if (current_flow == edge.rate_limit * opportunity.planning_horizon) {
+                continue;
+            }
 
-            if (updated_latency < latency_pair.latency && rate_limit_satisfied()) {
-                pq.push({ updated_latency, edge.dest });
-                latency_pair.latency = updated_latency;
-                latency_pair.edge_ptr = &edge;
+            int new_latency = current.latency + edge.latency;
+            if (new_latency < min_latency_buffer[edge.dest]) {
+                min_latency_buffer[edge.dest] = new_latency;
+                parent_edge_buffer[edge.dest] = &edge;
+                pq.push({new_latency, edge.dest});
             }
         }
-
-        pq.pop();
     }
 
     return false;
 }
 
-void BruteForceSolver::update_flow_path(const std::unordered_map<int, BruteForceSolver::LatencyPair> latency_costs, 
-                                        std::unordered_map<int, int>& path_flow, 
-                                        int dest) {
-    int cur_node{ dest };
-    const Edge* cur_edge{ latency_costs.at(dest).edge_ptr };
+void BruteForceSolver::update_flow_path(int target_exchange, const std::vector<const Edge*>& parent_edge_buffer) {
+    const Edge* cur_edge{ parent_edge_buffer.at(target_exchange) };
 
     while (cur_edge) {
-        path_flow[cur_edge->id]++;
-        cur_node = cur_edge->source;
-        cur_edge = latency_costs.at(cur_edge->source).edge_ptr;
+        m_path_flow.at(cur_edge->id)++;
+        cur_edge = parent_edge_buffer.at(cur_edge->source);
     }
 }

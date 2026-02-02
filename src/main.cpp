@@ -57,6 +57,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << "Total profit: " << solver->solve(*graph, orderOpportunities) << '\n';
+    std::cout << "Total profit: £" << solver->solve(*graph, orderOpportunities) << '\n';
     return 0;
 }

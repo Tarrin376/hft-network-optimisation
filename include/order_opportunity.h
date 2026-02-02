@@ -1,9 +1,11 @@
 #ifndef ORDER_OPPORTUNITY_H
 #define ORDER_OPPORTUNITY_H
 
+#include <cstdint>
+
 struct OrderOpportunity {
-    int server{};
-    int exchange{};
+    std::size_t server{};
+    std::size_t exchange{};
     int num_orders{};
     int planning_horizon{};
 };

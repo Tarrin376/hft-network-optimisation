@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <algorithm>
+#include <cstddef>
 
 #include "graph.h"
 
@@ -18,23 +19,31 @@ void Graph::add_edge(const Edge& edge, bool source_is_server) {
     m_edges.insert({ edge.id, edge });
 }
 
-const Edge& Graph::get_edge(int edge_id) const {
+const Edge& Graph::get_edge(std::size_t edge_id) const {
     assert(m_edges.contains(edge_id));
     return m_edges.at(edge_id);
 }
 
-const Node& Graph::get_node(int node_id) const {
+const Node& Graph::get_node(std::size_t node_id) const {
     assert(m_nodes.contains(node_id));
     return m_nodes.at(node_id);
 }
 
-const std::vector<int>& Graph::outgoing(int node) const {
+const std::vector<std::size_t>& Graph::outgoing(std::size_t node) const {
     assert(m_nodes.contains(node));
     return m_nodes.at(node).edges;
 }
 
-const std::vector<int> Graph::get_edge_ids() const {
-    std::vector<int> edge_ids{};
+const std::size_t Graph::get_num_nodes() const {
+    return m_nodes.size();
+}
+
+const std::size_t Graph::get_num_edges() const {
+    return m_edges.size();
+}
+
+const std::vector<std::size_t> Graph::get_edge_ids() const {
+    std::vector<std::size_t> edge_ids{};
     
     std::transform(m_edges.begin(), m_edges.end(), back_inserter(edge_ids), 
         [](const std::pair<int, Edge>& pair) { 
@@ -44,8 +53,8 @@ const std::vector<int> Graph::get_edge_ids() const {
     return edge_ids;
 }
 
-const std::vector<int> Graph::get_node_ids() const {
-    std::vector<int> node_ids{};
+const std::vector<std::size_t> Graph::get_node_ids() const {
+    std::vector<std::size_t> node_ids{};
     
     std::transform(m_nodes.begin(), m_nodes.end(), back_inserter(node_ids), 
         [](const std::pair<int, Node>& pair) { 

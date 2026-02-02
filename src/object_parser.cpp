@@ -2,6 +2,7 @@
 #include <memory>
 #include <sstream>
 #include <iostream>
+#include <cstdint>
 
 #include "order_opportunity.h"
 #include "object_parser.h"
@@ -11,12 +12,12 @@
 std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
     Graph graph{};
-    int id{ 0 };
+    std::size_t id{ 0 };
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        Edge edge{ ++id };
+        Edge edge{ id };
         
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);
@@ -37,6 +38,7 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
         bool source_is_server = std::stoi(token);
 
         graph.add_edge(edge, source_is_server);
+        id++;
     }
 
     return std::make_unique<Graph>(graph);

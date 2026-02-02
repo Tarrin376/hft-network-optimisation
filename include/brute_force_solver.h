@@ -2,7 +2,7 @@
 #define BRUTE_FORCE_SOLVER_H
 
 #include <vector>
-#include <unordered_set>
+#include <cstdint>
 
 #include "order_opportunity.h"
 #include "graph.h"
@@ -11,33 +11,27 @@
 class BruteForceSolver : public Solver {
 public:
     BruteForceSolver(int max_order_profit, int max_latency);
-    
-    struct LatencyPair {
-        int latency{};
-        const Edge* edge_ptr{};
-    };
 
     int solve(const Graph& graph, const std::vector<OrderOpportunity>& opportunities) override;
 
 private:
     int find_max_profit(const Graph& graph,
-                        const std::vector<int> edge_ids, 
                         const std::vector<OrderOpportunity>& opportunities,
-                        std::unordered_set<int>& selected_edges, 
-                        int index);
+                        std::vector<std::uint8_t> & selected_edges,
+                        std::size_t index);
 
     int calculate_total_profit(const Graph& graph,
-                               const std::unordered_set<int>& selected_edges, 
+                               const std::vector<std::uint8_t>& selected_edges, 
                                const std::vector<OrderOpportunity>& opportunities);
 
     bool find_optimal_path(const Graph& graph, 
                            const OrderOpportunity& opportunity, 
-                           const std::unordered_set<int>& selected_edges,
-                           std::unordered_map<int, int>& path_flow);
+                           const std::vector<std::uint8_t>& selected_edges);
         
-    void update_flow_path(const std::unordered_map<int, BruteForceSolver::LatencyPair> latency_costs,
-                          std::unordered_map<int, int>& path_flow, 
-                          int dest);
+    void update_flow_path(int target_exchange, const std::vector<const Edge*>& parent_edge_buffer);
+
+    std::vector<uint8_t> m_selected_edges{}; 
+    std::vector<int> m_path_flow{};
 };
 
 #endif
