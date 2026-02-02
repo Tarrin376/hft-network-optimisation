@@ -9,9 +9,9 @@
 #include "solver.h"
 #include "brute_force_solver.h"
 
-std::unique_ptr<Solver> determineSolver(const std::string& algorithm) {
+std::unique_ptr<Solver> determineSolver(const std::string& algorithm, int max_order_profit, int max_latency) {
     if (algorithm == "brute_force") {
-        return std::make_unique<BruteForceSolver>();
+        return std::make_unique<BruteForceSolver>(max_order_profit, max_latency);
     } else {
         return nullptr;
     }
@@ -22,6 +22,9 @@ int main(int argc, char* argv[]) {
     std::string expected_orders_path{};
     std::string algorithm{};
 
+    int max_order_profit{};
+    int max_latency{};
+
     for (int i = 0; i < argc; ++i) {
         std::string arg{ argv[i] };
 
@@ -31,6 +34,10 @@ int main(int argc, char* argv[]) {
             expected_orders_path = argv[++i];
         } else if (arg == "--algorithm" || arg == "-a") {
             algorithm = argv[++i];
+        } else if (arg == "--maxprofit" || arg == "-p") {
+            max_order_profit = std::stoi(argv[++i]);
+        } else if (arg == "--maxlatency" || arg == "-l") {
+            max_latency = std::stoi(argv[++i]); 
         }
     }
 
@@ -44,7 +51,7 @@ int main(int argc, char* argv[]) {
         ObjectParser::parseOrderOpportunities(expected_orders_path) 
     };
 
-    std::unique_ptr<Solver> solver{ determineSolver(algorithm) };
+    std::unique_ptr<Solver> solver{ determineSolver(algorithm, max_order_profit, max_latency) };
     if (!solver) {
         std::cout << "Failed to determine solver.";
         return 1;

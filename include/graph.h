@@ -3,15 +3,14 @@
 
 #include <unordered_map>
 #include <vector>
-#include <cstdint>
 
 struct Edge {
     int id{};
     int source{};
     int dest{};
     int rate_limit{};
-    double latency{};
-    std::uint64_t lease_cost{};
+    int latency{};
+    int lease_cost{};
 };
 
 struct Node {
@@ -23,10 +22,14 @@ struct Node {
 class Graph {
 public:
     void add_edge(const Edge& edge, bool source_is_server);
-    const Edge& get_edge(int edgeId);
-    const Node& get_node(int nodeId);
+
+    const Edge& get_edge(int edge_id) const;
+    const Node& get_node(int node_id) const;
+
     const std::vector<int>& outgoing(int node) const;
+    
     const std::vector<int> get_edge_ids() const;
+    const std::vector<int> get_node_ids() const;
 
 private:
     std::unordered_map<int, Edge> m_edges{};

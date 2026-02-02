@@ -10,10 +10,18 @@ class Solver {
 public:
     virtual ~Solver() = default;
 
-    virtual double solve(
+    virtual int solve(
         const Graph& graph, 
         const std::vector<OrderOpportunity>& order_opportunities
     ) = 0;
+
+protected:
+    Solver(int max_order_profit, int max_latency) 
+    : m_max_order_profit{ max_order_profit }
+    , m_max_latency{ max_latency } {}
+
+    int m_max_order_profit{};
+    int m_max_latency{};
 };
 
 #endif
