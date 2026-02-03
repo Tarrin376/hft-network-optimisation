@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "order_opportunity.h"
-#include "graph.h"
+#include "types/order_opportunity.h"
+#include "types/graph.h"
 
 class Solver {
 public:

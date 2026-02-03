@@ -4,9 +4,9 @@
 #include <vector>
 #include <cstdint>
 
-#include "order_opportunity.h"
-#include "graph.h"
-#include "solver.h"
+#include "types/order_opportunity.h"
+#include "types/graph.h"
+#include "solvers/solver.h"
 
 class BruteForceSolver : public Solver {
 public:

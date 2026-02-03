@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <iostream>
 
-#include "brute_force_solver.h"
-#include "order_opportunity.h"
-#include "graph.h"
-#include "solver.h"
+#include "solvers/brute_force_solver.h"
+#include "types/order_opportunity.h"
+#include "types/graph.h"
+#include "solvers/solver.h"
 
 BruteForceSolver::BruteForceSolver(int max_order_profit, int max_latency) 
 : Solver{ max_order_profit, max_latency } {}
@@ -29,10 +29,10 @@ int BruteForceSolver::find_max_profit(const Graph& graph,
         return calculate_total_profit(graph, opportunities);
     }
 
-    m_selected_edges[index] = 1;
+    m_selected_edges[index] = true;
     auto select_edge_profit{ find_max_profit(graph, opportunities, index + 1) };
 
-    m_selected_edges[index] = 0;
+    m_selected_edges[index] = false;
     auto ignore_edge_profit{ find_max_profit(graph, opportunities, index + 1) };
 
     return std::max(select_edge_profit, ignore_edge_profit);
@@ -51,7 +51,7 @@ int BruteForceSolver::calculate_total_profit(const Graph& graph, const std::vect
 
     int total_profit{ 0 };
     for (const int edge_id : m_selected_edges) {
-        if (m_selected_edges[edge_id] == 1) {
+        if (m_selected_edges[edge_id]) {
             const Edge& edge{ graph.get_edge(edge_id) };
             int gross_profit{ m_max_order_profit * std::max(1 - edge.latency / m_max_latency, 0) };
             total_profit += gross_profit * m_path_flow.at(edge.id) - edge.lease_cost;
@@ -91,7 +91,7 @@ bool BruteForceSolver::find_optimal_path(const Graph& graph, const OrderOpportun
         }
 
         for (const auto& edge_id : graph.get_node(current.node_id).edges) {
-            if (m_selected_edges[edge_id] == 0) {
+            if (m_selected_edges[edge_id]) {
                 continue;
             }
 

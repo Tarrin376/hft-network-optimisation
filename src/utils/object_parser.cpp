@@ -4,10 +4,10 @@
 #include <iostream>
 #include <cstdint>
 
-#include "order_opportunity.h"
-#include "object_parser.h"
-#include "csv_reader.h"
-#include "graph.h"
+#include "types/order_opportunity.h"
+#include "utils/object_parser.h"
+#include "utils/csv_reader.h"
+#include "types/graph.h"
 
 std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };

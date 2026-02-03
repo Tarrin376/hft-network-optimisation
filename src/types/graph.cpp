@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "graph.h"
+#include "types/graph.h"
 
 void Graph::add_edge(const Edge& edge, bool source_is_server) {
     if (!m_nodes.contains(edge.source)) {

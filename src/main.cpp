@@ -3,11 +3,11 @@
 #include <memory>
 #include <vector>
 
-#include "order_opportunity.h"
-#include "object_parser.h"
-#include "graph.h"
-#include "solver.h"
-#include "brute_force_solver.h"
+#include "types/order_opportunity.h"
+#include "utils/object_parser.h"
+#include "types/graph.h"
+#include "solvers/solver.h"
+#include "solvers/brute_force_solver.h"
 
 std::unique_ptr<Solver> determineSolver(const std::string& algorithm, int max_order_profit, int max_latency) {
     if (algorithm == "brute_force") {

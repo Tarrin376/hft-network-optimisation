@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 
-#include "order_opportunity.h"
-#include "graph.h"
+#include "types/order_opportunity.h"
+#include "types/graph.h"
 
 namespace ObjectParser {
     std::unique_ptr<Graph> parseGraph(const std::string& file_path);
