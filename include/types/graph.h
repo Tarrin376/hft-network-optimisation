@@ -1,7 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <unordered_map>
 #include <vector>
 #include <cstdint>
 
@@ -10,7 +9,7 @@ struct Edge {
     std::size_t source{};
     std::size_t dest{};
     int rate_limit{};
-    int latency{};
+    double latency{};
     int lease_cost{};
 };
 
@@ -22,22 +21,25 @@ struct Node {
 
 class Graph {
 public:
+    Graph(std::size_t num_nodes, std::size_t num_edges);
+
     void add_edge(const Edge& edge, bool source_is_server);
 
     const Edge& get_edge(std::size_t edge_id) const;
     const Node& get_node(std::size_t node_id) const;
 
-    const std::vector<std::size_t>& outgoing(std::size_t node) const;
+    // Returns edge IDs of outgoing edges
+    const std::vector<std::size_t>& outgoing(std::size_t node_id) const;
 
-    const std::size_t get_num_nodes() const;
-    const std::size_t get_num_edges() const;
-    
-    const std::vector<std::size_t> get_edge_ids() const;
-    const std::vector<std::size_t> get_node_ids() const;
+    std::size_t get_num_nodes() const;
+    std::size_t get_num_edges() const;
 
 private:
-    std::unordered_map<std::size_t, Edge> m_edges{};
-    std::unordered_map<std::size_t, Node> m_nodes{};
+    std::vector<Edge> m_edges{};
+    std::vector<Node> m_nodes{};
+
+    std::size_t m_num_nodes{};
+    std::size_t m_num_edges{};
 };
 
 #endif

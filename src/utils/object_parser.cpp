@@ -4,21 +4,32 @@
 #include <iostream>
 #include <cstdint>
 
-#include "types/order_opportunity.h"
+#include "types/expected_requests.h"
 #include "utils/object_parser.h"
 #include "utils/csv_reader.h"
 #include "types/graph.h"
 
 std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    Graph graph{};
+    std::unique_ptr<Graph> graph{ nullptr };
     std::size_t id{ 0 };
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
+
+        if (!graph) {
+            std::getline(ss, token, ',');
+            int num_nodes{ std::stoi(token) };
+            
+            std::getline(ss, token, ',');
+            int num_edges{ std::stoi(token) };
+
+            graph = std::make_unique<Graph>(num_nodes, num_edges);
+            continue;
+        }
+
         Edge edge{ id };
-        
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);
 
@@ -37,36 +48,36 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
         std::getline(ss, token, ',');
         bool source_is_server = std::stoi(token);
 
-        graph.add_edge(edge, source_is_server);
+        graph->add_edge(edge, source_is_server);
         id++;
     }
 
-    return std::make_unique<Graph>(graph);
+    return graph;
 }
 
-std::vector<OrderOpportunity> ObjectParser::parseOrderOpportunities(const std::string& file_path) {
+ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    std::vector<OrderOpportunity> orderOpportunities{};
+    ExpectedRequests requests{};
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        OrderOpportunity orderOpportunity{};
+        Request request{};
 
         std::getline(ss, token, ',');
-        orderOpportunity.server = std::stoi(token);
+        request.server = std::stoi(token);
 
         std::getline(ss, token, ',');
-        orderOpportunity.exchange = std::stoi(token);
+        request.exchange = std::stoi(token);
 
         std::getline(ss, token, ',');
-        orderOpportunity.num_orders = std::stoi(token);
+        request.num_orders = std::stoi(token);
 
         std::getline(ss, token, ',');
-        orderOpportunity.planning_horizon = std::stoi(token);
+        request.planning_horizon = std::stoi(token);
 
-        orderOpportunities.push_back(orderOpportunity);
+        requests.push_back(request);
     }
 
-    return orderOpportunities;
+    return requests;
 }

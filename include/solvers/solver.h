@@ -3,25 +3,25 @@
 
 #include <vector>
 
-#include "types/order_opportunity.h"
+#include "types/expected_requests.h"
 #include "types/graph.h"
 
 class Solver {
 public:
     virtual ~Solver() = default;
 
-    virtual int solve(
+    virtual double solve(
         const Graph& graph, 
-        const std::vector<OrderOpportunity>& order_opportunities
+        const ExpectedRequests& requests
     ) = 0;
 
 protected:
-    Solver(int max_order_profit, int max_latency) 
+    Solver(int max_order_profit, double max_latency) 
     : m_max_order_profit{ max_order_profit }
     , m_max_latency{ max_latency } {}
 
     int m_max_order_profit{};
-    int m_max_latency{};
+    double m_max_latency{};
 };
 
 #endif
