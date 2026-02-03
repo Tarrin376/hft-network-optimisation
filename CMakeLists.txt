@@ -9,9 +9,9 @@ include(FetchContent)
 
 # Catch2
 FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v3.12.0
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG        v3.12.0
 )
 FetchContent_MakeAvailable(Catch2)
 
@@ -31,6 +31,11 @@ file(GLOB_RECURSE HEADERS include/*.h)
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 # Unit tests with Catch2
 add_executable(my_tests tests/test_main.cpp)
