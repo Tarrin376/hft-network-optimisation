@@ -1,7 +1,5 @@
 #include <vector>
 #include <cassert>
-#include <iostream>
-#include <algorithm>
 #include <cstddef>
 
 #include "types/graph.h"

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <vector>
 
 #include "types/expected_requests.h"
 #include "utils/object_parser.h"
@@ -43,13 +42,15 @@ int main(int argc, char* argv[]) {
 
     std::unique_ptr<Graph> graph{ ObjectParser::parseGraph(graph_file_path) };
     if (!graph) {
-        std::cout << "Failed to parse graph.";
+        std::cout << "Failed to parse graph. Check file name and try again.\n";
         return 1;
     }
 
-    ExpectedRequests requests{ 
-        ObjectParser::parseExpectedRequests(expected_requests_path) 
-    };
+    ExpectedRequests requests{ ObjectParser::parseExpectedRequests(expected_requests_path) };
+    if (requests.empty()) {
+        std::cout << "Failed to parse expected requests. Check file name and try again.\n";
+        return 1;
+    }
 
     std::unique_ptr<Solver> solver{ determineSolver(algorithm, max_order_profit, max_latency) };
     if (!solver) {
@@ -57,6 +58,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << "Total profit: " << solver->solve(*graph, requests) << '\n';
+    double max_profit{ solver->solve(*graph, requests) };
+    if (max_profit == -1) {
+        std::cout << "No suitable network configuration found for the given set of requests.\n";
+    } else {
+        std::cout << "Total profit: " << max_profit << '\n';
+    }
+
     return 0;
 }

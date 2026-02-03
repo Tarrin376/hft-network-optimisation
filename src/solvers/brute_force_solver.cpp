@@ -1,10 +1,7 @@
 #include <vector>
-#include <functional>
-#include <utility>
 #include <queue>
 #include <limits>
 #include <cstdint>
-#include <iostream>
 
 #include "solvers/brute_force_solver.h"
 #include "types/expected_requests.h"
@@ -16,7 +13,7 @@ BruteForceSolver::BruteForceSolver(int max_order_profit, double max_latency)
 
 double BruteForceSolver::solve(const Graph& graph, const ExpectedRequests& requests) {
     std::size_t num_edges{ graph.get_num_edges() };
-    m_selected_edges.assign(num_edges, false); 
+    m_selected_edges.assign(num_edges, false);
 
     auto max_profit{ find_max_profit(graph, requests, 0) };
     return max_profit;
@@ -42,7 +39,7 @@ double BruteForceSolver::calculate_total_profit(const Graph& graph, const Expect
         for (int i = 0; i < request.num_orders; ++i) {
             bool found_path = find_optimal_path(graph, request);
             if (!found_path) {
-                return 0;
+                return -1;
             }
         }
     }

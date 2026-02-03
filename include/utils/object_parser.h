@@ -3,7 +3,6 @@
 
 #include <string>
 #include <memory>
-#include <vector>
 
 #include "types/expected_requests.h"
 #include "types/graph.h"

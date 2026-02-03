@@ -1,4 +1,3 @@
 .vscode
 build
-test_graph.csv
-test_orders.csv
+test*.csv

@@ -1,7 +1,6 @@
 #include <string>
 #include <memory>
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
 #include "types/expected_requests.h"
