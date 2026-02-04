@@ -17,8 +17,8 @@ public:
 private:
     double find_max_profit(const Graph& graph, const ExpectedRequests& requests, std::size_t index);
     double calculate_total_profit(const Graph& graph, const ExpectedRequests& requests);
-    bool find_optimal_path(const Graph& graph, const Request& request);
-    void update_flow_path(int target_exchange, const std::vector<const Edge*>& parent_edge_buffer);
+    int get_max_order_flow(const Graph& graph, const Request& request, int remaining_orders);
+    int send_orders(const Request& request, std::vector<const Edge*>& parent_edge_buffer, int remaining_orders);
 
     std::vector<uint8_t> m_selected_edges{}; 
     std::vector<int> m_path_flow{};

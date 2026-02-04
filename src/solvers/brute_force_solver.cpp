@@ -2,6 +2,7 @@
 #include <queue>
 #include <limits>
 #include <cstdint>
+#include <iostream>
 
 #include "solvers/brute_force_solver.h"
 #include "types/expected_requests.h"
@@ -36,11 +37,15 @@ double BruteForceSolver::find_max_profit(const Graph& graph, const ExpectedReque
 double BruteForceSolver::calculate_total_profit(const Graph& graph, const ExpectedRequests& requests) {
     for (const auto& request : requests) {
         m_path_flow.assign(graph.get_num_edges(), 0);
-        for (int i = 0; i < request.num_orders; ++i) {
-            bool found_path = find_optimal_path(graph, request);
-            if (!found_path) {
+        int remaining_orders{ request.num_orders };
+
+        while (remaining_orders > 0) {
+            int orders_sent{ get_max_order_flow(graph, request, remaining_orders) };
+            if (orders_sent == 0) {
                 return -1;
             }
+
+            remaining_orders -= orders_sent;
         }
     }
 
@@ -56,7 +61,7 @@ double BruteForceSolver::calculate_total_profit(const Graph& graph, const Expect
     return total_profit;
 }
 
-bool BruteForceSolver::find_optimal_path(const Graph& graph, const Request& request) {
+int BruteForceSolver::get_max_order_flow(const Graph& graph, const Request& request, int remaining_orders) {
     struct State {
         double latency;
         std::size_t node_id;
@@ -80,8 +85,7 @@ bool BruteForceSolver::find_optimal_path(const Graph& graph, const Request& requ
         pq.pop();
 
         if (current.node_id == request.exchange) {
-            update_flow_path(request.exchange, parent_edge_buffer);
-            return true;
+            return send_orders(request, parent_edge_buffer, remaining_orders);
         }
 
         if (current.latency > min_latency_buffer[current.node_id]) {
@@ -109,14 +113,25 @@ bool BruteForceSolver::find_optimal_path(const Graph& graph, const Request& requ
         }
     }
 
-    return false;
+    return 0;
 }
 
-void BruteForceSolver::update_flow_path(int target_exchange, const std::vector<const Edge*>& parent_edge_buffer) {
-    const Edge* cur_edge{ parent_edge_buffer.at(target_exchange) };
+int BruteForceSolver::send_orders(const Request& request, std::vector<const Edge*>& parent_edge_buffer, int remaining_orders) {
+    const Edge* cur_edge{ parent_edge_buffer.at(request.exchange) };
+    int min_rate_limit{ cur_edge->rate_limit };
 
     while (cur_edge) {
-        m_path_flow.at(cur_edge->id)++;
+        min_rate_limit = std::min(min_rate_limit, cur_edge->rate_limit);
         cur_edge = parent_edge_buffer.at(cur_edge->source);
     }
+
+    int orders_sent{ std::min(remaining_orders, min_rate_limit * request.planning_horizon) };
+    cur_edge = parent_edge_buffer.at(request.exchange);
+
+    while (cur_edge) {
+        m_path_flow.at(cur_edge->id) += orders_sent;
+        cur_edge = parent_edge_buffer.at(cur_edge->source);
+    }
+
+    return orders_sent;
 }
