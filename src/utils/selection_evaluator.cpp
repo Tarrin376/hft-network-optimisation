@@ -1,0 +1,133 @@
+#include <cstdint>
+#include <vector>
+#include <queue>
+#include <limits>
+
+#include "utils/selection_evaluator.h"
+#include "types/expected_requests.h"
+#include "types/graph.h"
+
+SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency) 
+    : m_max_order_profit{ max_order_profit }
+    , m_max_latency{ max_latency } {}
+
+double SelectionEvaluator::evaluate(const Graph& graph, 
+                                    const ExpectedRequests& requests, 
+                                    const std::vector<uint8_t>& selected_edges) const {
+    auto total_profit{ find_total_profit(graph, requests, selected_edges) };
+    return total_profit;
+}
+
+double SelectionEvaluator::find_total_profit(const Graph& graph, 
+                                             const ExpectedRequests& requests, 
+                                             const std::vector<uint8_t>& selected_edges) const {
+    std::size_t num_edges{ graph.get_num_edges() };
+    std::vector<int> path_flow(num_edges, 0);
+    double total_profit{ 0 };
+
+    for (const auto& request : requests) {
+        int remaining_orders{ request.num_orders };
+        while (remaining_orders > 0) {
+            int processed_orders{ get_processed_orders(graph, request, selected_edges, path_flow, remaining_orders) };
+            if (processed_orders == 0) {
+                return -1;
+            }
+            
+            remaining_orders -= processed_orders;
+        }
+
+        for (int i = 0; i < num_edges; ++i) {
+            if (selected_edges[i]) {
+                const auto& edge{ graph.get_edge(i) };
+                double gross_profit{ m_max_order_profit * (1 - edge.latency / m_max_latency) };
+                total_profit += gross_profit * path_flow.at(i) - edge.lease_cost;
+            }
+        }
+
+        path_flow.assign(num_edges, 0);
+    }
+
+    return total_profit;
+}
+
+int SelectionEvaluator::get_processed_orders(const Graph& graph, 
+                                             const Request& request, 
+                                             const std::vector<uint8_t>& selected_edges, 
+                                             std::vector<int>& path_flow,
+                                             int remaining_orders) const {
+    struct State {
+        double latency;
+        std::size_t node_id;
+    };
+
+    auto cmp = [](const State& a, const State& b) {
+        return a.latency > b.latency;
+    };
+    
+    std::priority_queue<State, std::vector<State>, decltype(cmp)> pq{};
+    std::size_t num_nodes{ graph.get_num_nodes() };
+
+    std::vector<double> min_latency_buffer(num_nodes, std::numeric_limits<double>::max());
+    std::vector<const Edge*> parent_edge_buffer(num_nodes, nullptr);
+
+    min_latency_buffer[request.server] = 0;
+    pq.push({0, request.server});
+
+    while (!pq.empty()) {
+        const State current = pq.top();
+        pq.pop();
+
+        if (current.node_id == request.exchange) {
+            return process_orders(request, parent_edge_buffer, path_flow, remaining_orders);
+        }
+
+        if (current.latency > min_latency_buffer[current.node_id]) {
+            continue;
+        }
+
+        for (const auto& edge_id : graph.get_node(current.node_id).edges) {
+            if (selected_edges[edge_id] == 0) {
+                continue;
+            }
+
+            const Edge& edge = graph.get_edge(edge_id);
+            int current_flow = path_flow.at(edge.id);
+            
+            if (current_flow == edge.rate_limit * request.planning_horizon) {
+                continue;
+            }
+
+            double new_latency = current.latency + edge.latency;
+            if (new_latency < min_latency_buffer[edge.dest]) {
+                min_latency_buffer[edge.dest] = new_latency;
+                parent_edge_buffer[edge.dest] = &edge;
+                pq.push({new_latency, edge.dest});
+            }
+        }
+    }
+
+    return 0;
+}
+
+int SelectionEvaluator::process_orders(const Request& request, 
+                                       std::vector<const Edge*>& parent_edge_buffer,
+                                       std::vector<int>& path_flow, 
+                                       int remaining_orders) const {
+    const Edge* cur_edge{ parent_edge_buffer.at(request.exchange) };
+    int min_rate_limit{ cur_edge->rate_limit };
+
+    while (cur_edge) {
+        min_rate_limit = std::min(min_rate_limit, cur_edge->rate_limit);
+        cur_edge = parent_edge_buffer.at(cur_edge->source);
+    }
+
+    int processed_orders{ std::min(remaining_orders, min_rate_limit * request.planning_horizon) };
+    cur_edge = parent_edge_buffer.at(request.exchange);
+
+    while (cur_edge) {
+        path_flow.at(cur_edge->id) += processed_orders;
+        cur_edge = parent_edge_buffer.at(cur_edge->source);
+    }
+
+    return processed_orders;
+}
