@@ -6,6 +6,7 @@
 
 #include "types/expected_requests.h"
 #include "types/graph.h"
+
 #include "solvers/solver.h"
 
 class BruteForceSolver : public Solver {

@@ -4,9 +4,10 @@
 #include <cstdint>
 
 #include "types/expected_requests.h"
+#include "types/graph.h"
+
 #include "utils/object_parser.h"
 #include "utils/csv_reader.h"
-#include "types/graph.h"
 
 std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
@@ -79,4 +80,38 @@ ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_pat
     }
 
     return requests;
+}
+
+Config ObjectParser::parseArgs(int argc, char* argv[]) {
+    Config config{};
+
+    for (int i = 0; i < argc; ++i) {
+        std::string arg{ argv[i] };
+
+        if (arg == "--graph" || arg == "-g") {
+            config.graph_file_path = argv[++i];
+        } else if (arg == "--requests" || arg == "-o") {
+            config.expected_requests_path = argv[++i];
+        } else if (arg == "--algorithm" || arg == "-a") {
+            config.algorithm = argv[++i];
+        } else if (arg == "--maxprofit" || arg == "-p") {
+            config.max_order_profit = std::stoi(argv[++i]);
+        } else if (arg == "--maxlatency" || arg == "-l") {
+            config.max_latency = std::stod(argv[++i]); 
+        } else if (arg == "--population") {
+            config.ga.population = std::stoi(argv[++i]);
+        } else if (arg == "--generations") {
+            config.ga.generations = std::stoi(argv[++i]);
+        } else if (arg == "--mutation") {
+            config.ga.mutation_rate = std::stod(argv[++i]);
+        } else if (arg == "--crossover") {
+            config.ga.crossover_rate = std::stod(argv[++i]);
+        } else if (arg == "--tournament-k") {
+            config.ga.tournament_k = std::stoi(argv[++i]);
+        } else if (arg == "--seed") {
+            config.ga.seed = static_cast<unsigned>(std::stoul(argv[++i]));
+        }
+    }
+
+    return config;
 }

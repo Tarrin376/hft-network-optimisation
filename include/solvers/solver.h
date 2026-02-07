@@ -2,8 +2,9 @@
 #define SOLVER_H
 
 #include "types/expected_requests.h"
-#include "utils/selection_evaluator.h"
 #include "types/graph.h"
+
+#include "utils/selection_evaluator.h"
 
 class Solver {
 public:
