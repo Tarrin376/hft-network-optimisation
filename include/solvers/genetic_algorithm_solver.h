@@ -27,7 +27,7 @@ private:
         std::vector<Chromosome> population);
 
     std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& population_fitness);
-    void crossover(Chromosome& parent1, Chromosome& parent2);
+    void crossover(Chromosome& parent1, Chromosome& parent2, std::size_t num_edges);
     void mutate(Chromosome& offspring);
 
     double m_max_profit{};

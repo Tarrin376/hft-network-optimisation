@@ -3,6 +3,8 @@
 #include <random>
 #include <iostream>
 
+#include "utils/bit_utils.h"
+
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
@@ -35,22 +37,16 @@ std::vector<GeneticAlgorithmSolver::Chromosome> GeneticAlgorithmSolver::build_in
 
     for (std::size_t i = 1; i < population.size(); ++i) {
         for (std::size_t j = 0; j < num_edges; ++j) {
-            std::size_t block_index{ j / 64 };
-            std::size_t bit_index{ j % 64 };
-
             if (dist(m_gen) < m_ga.initial_bit_flip_rate) {
-                population[i][block_index] ^= (1ULL << bit_index);
+                population[i][j / 64] ^= (1ULL << (j % 64));
             }
         }
     }
 
     Chromosome random(num_edges / 64 + 1);
     for (std::size_t j = 0; j < num_edges; ++j) {
-        std::size_t block_index{ j / 64 };
-        std::size_t bit_index{ j % 64 };
-
         if (dist(m_gen) < 0.5) {
-            random[block_index] |= (1ULL << bit_index);
+            random[j / 64] |= (1ULL << (j % 64));
         }
     }
 
@@ -79,7 +75,7 @@ std::vector<Chromosome> population) {
         auto& parent2{ population.at(selected_parents.at(i + 1)) };
         
         if (dist(m_gen) < m_ga.crossover_rate) {
-            crossover(parent1, parent2);
+            crossover(parent1, parent2, graph.get_num_edges());
         }
 
         mutate(parent1);
@@ -103,8 +99,8 @@ std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(c
     const double step{ fitness_total / static_cast<double>(m_ga.population_size) };
     std::uniform_real_distribution<double> dist(0.0, step);
 
-    double pointer{ dist(m_gen) };
     double cumulative{ population_fitness.at(0) };
+    double pointer{ dist(m_gen) };
     std::size_t idx{ 0 };
 
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
@@ -120,28 +116,25 @@ std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(c
     return selected_parents;
 }
 
-void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2) {
-    std::uniform_int_distribution dist(0, static_cast<int>(64 * parent1.size()) - 1);
+void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2, std::size_t num_edges) {
+    std::uniform_int_distribution dist(0, static_cast<int>(num_edges) - 1);
     int first_point{ dist(m_gen) };
     int second_point{ dist(m_gen) };
 
-    std::size_t start_idx{ static_cast<std::size_t>(std::min(first_point, second_point)) };
-    std::size_t end_idx{ static_cast<std::size_t>(std::max(first_point, second_point)) };
+    int start_idx{ std::min(first_point, second_point) };
+    int end_idx{ std::max(first_point, second_point) };
 
-    std::size_t start_block{ start_idx / 64 };
-    std::size_t end_block{ end_idx / 64 };
+    int start_block{ start_idx / 64 };
+    int end_block{ end_idx / 64 };
 
     for (std::size_t i = start_block; i <= end_block; ++i) {
-        std::size_t start_bit{ i == start_block ? start_idx % 64 : 0 };
-        std::size_t end_bit{ i == end_block ? end_idx % 64 : 64 };
-        
-        std::size_t start_mask{ (1ULL << (65 - start_bit)) - 1 };
-        std::size_t end_mask{ ~0ULL ^ ((1ULL << (64 - end_bit)) - 1) };
+        int left_bit{ i == start_block ? (start_idx % 64) + 1 : 1 };
+        int right_bit{ i == end_block ? (end_idx % 64) + 1 : 64 };
 
-        std::size_t parent1_swap{ parent1[i] & start_mask & end_mask };
-        std::size_t parent2_swap{ parent2[i] & start_mask & end_mask };
+        std::uint64_t parent1_swap{ BitUtils::mask_left(parent1[i], left_bit) & BitUtils::mask_right(parent1[i], right_bit) };
+        std::uint64_t parent2_swap{ BitUtils::mask_left(parent2[i], left_bit) & BitUtils::mask_right(parent2[i], right_bit) };
 
-        std::size_t clear{ end_mask ^ start_mask };
+        std::uint64_t clear{ ~(BitUtils::mask_left(~0ULL, left_bit), BitUtils::mask_right(~0ULL, right_bit)) };
         parent1[i] = (parent1[i] & clear) | parent2_swap;
         parent2[i] = (parent2[i] & clear) | parent1_swap;
     }
@@ -149,6 +142,7 @@ void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2)
 
 void GeneticAlgorithmSolver::mutate(Chromosome& offspring) {
     std::uniform_real_distribution<double> dist(0.0, 1.0);
+    
     for (std::size_t i = 0; i < offspring.size(); ++i) {
         for (int j = 0; j < 63; ++j) {
             if (m_ga.mutation_rate < dist(m_gen)) {

@@ -24,13 +24,10 @@ double BruteForceSolver::backtrack(const Graph& graph,
         return m_selection_evaluator.evaluate(graph, requests, selected_edges);
     }
 
-    std::size_t block_index{ index / 64 };
-    std::size_t bit_index{ index % 64 };
-
-    selected_edges[block_index] |= (1ULL << bit_index);
+    selected_edges[index / 64] |= (1ULL << (index % 64));
     auto select_edge_profit{ backtrack(graph, requests, selected_edges, index + 1) };
 
-    selected_edges[block_index] ^= (1ULL << bit_index);
+    selected_edges[index / 64] ^= (1ULL << (index % 64));
     auto ignore_edge_profit{ backtrack(graph, requests, selected_edges, index + 1) };
 
     return std::max(select_edge_profit, ignore_edge_profit);
