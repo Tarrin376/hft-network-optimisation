@@ -15,7 +15,7 @@ SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency)
 double SelectionEvaluator::evaluate(
 const Graph& graph, 
 const ExpectedRequests& requests, 
-const std::vector<uint8_t>& selected_edges) {
+const std::vector<uint64_t>& selected_edges) {
     auto total_profit{ find_total_profit(graph, requests, selected_edges) };
     return total_profit;
 }
@@ -23,7 +23,7 @@ const std::vector<uint8_t>& selected_edges) {
 double SelectionEvaluator::find_total_profit(
 const Graph& graph, 
 const ExpectedRequests& requests, 
-const std::vector<uint8_t>& selected_edges) {
+const std::vector<uint64_t>& selected_edges) {
     std::size_t num_edges{ graph.get_num_edges() };
     std::vector<int> path_flow(num_edges, 0);
     double total_profit{ 0 };
@@ -40,7 +40,7 @@ const std::vector<uint8_t>& selected_edges) {
         }
 
         for (int i = 0; i < num_edges; ++i) {
-            if (selected_edges.at(i)) {
+            if (edge_is_selected(i, selected_edges)) {
                 const auto& edge{ graph.get_edge(i) };
                 double gross_profit{ m_max_order_profit * (1 - edge.latency / m_max_latency) };
                 total_profit += gross_profit * path_flow.at(i);
@@ -51,7 +51,7 @@ const std::vector<uint8_t>& selected_edges) {
     }
 
     for (std::size_t i = 0; i < num_edges; ++i) {
-        if (selected_edges.at(i)) {
+        if (edge_is_selected(i, selected_edges)) {
             total_profit -= graph.get_edge(i).lease_cost;
         }
     }
@@ -62,7 +62,7 @@ const std::vector<uint8_t>& selected_edges) {
 int SelectionEvaluator::get_processed_orders(
 const Graph& graph, 
 const Request& request, 
-const std::vector<uint8_t>& selected_edges, 
+const std::vector<uint64_t>& selected_edges, 
 std::vector<int>& path_flow,
 int remaining_orders) {
     struct State {
@@ -95,13 +95,13 @@ int remaining_orders) {
             continue;
         }
 
-        for (const auto& edge_id : graph.get_node(current.node_id).edges) {
-            if (!selected_edges.at(edge_id)) {
+        for (const auto& edge_index : graph.get_node(current.node_id).edges) {
+            if (!edge_is_selected(edge_index, selected_edges)) {
                 continue;
             }
 
-            const Edge& edge = graph.get_edge(edge_id);
-            int current_flow = path_flow.at(edge.id);
+            const Edge& edge = graph.get_edge(edge_index);
+            int current_flow = path_flow.at(edge_index);
             
             if (current_flow == edge.rate_limit * request.planning_horizon) {
                 continue;
@@ -141,4 +141,8 @@ int remaining_orders) {
     }
 
     return processed_orders;
+}
+
+bool SelectionEvaluator::edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) {
+    return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
 }

@@ -13,13 +13,13 @@
 
 class GeneticAlgorithmSolver : public Solver {
 public:
-    using Chromosome = std::vector<std::uint8_t>;
+    using Chromosome = std::vector<std::uint64_t>;
     GeneticAlgorithmSolver(int max_order_profit, double max_latency, const GAConfig& ga);
 
     double solve(const Graph& graph, const ExpectedRequests& requests) override;
 
 private:
-    std::vector<Chromosome> build_initial_population(const Graph& graph);
+    std::vector<Chromosome> build_initial_population(std::size_t num_edges);
     
     std::vector<Chromosome> reproduce(
         const Graph& graph, 

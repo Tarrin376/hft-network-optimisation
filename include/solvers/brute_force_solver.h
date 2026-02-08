@@ -18,7 +18,7 @@ public:
 private:
     double backtrack(const Graph& graph, 
                      const ExpectedRequests& requests, 
-                     std::vector<uint8_t>& selected_edges, 
+                     std::vector<uint64_t>& selected_edges, 
                      std::size_t index);
 };
 

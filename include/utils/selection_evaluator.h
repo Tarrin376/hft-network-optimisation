@@ -14,18 +14,18 @@ public:
     double evaluate(
         const Graph& graph, 
         const ExpectedRequests& requests, 
-        const std::vector<uint8_t>& selected_edges);
+        const std::vector<uint64_t>& selected_edges);
 
 private:
     double find_total_profit(
         const Graph& graph, 
         const ExpectedRequests& requests, 
-        const std::vector<uint8_t>& selected_edges);
+        const std::vector<uint64_t>& selected_edges);
 
     int get_processed_orders(
         const Graph& graph, 
         const Request& request, 
-        const std::vector<uint8_t>& selected_edges,
+        const std::vector<uint64_t>& selected_edges,
         std::vector<int>& path_flow,
         int remaining_orders);
 
@@ -34,6 +34,8 @@ private:
         std::vector<const Edge*>& parent_edge_buffer,
         std::vector<int>& path_flow,
         int remaining_orders);
+
+    bool edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges);
 
     int m_max_order_profit{};
     double m_max_latency{};
