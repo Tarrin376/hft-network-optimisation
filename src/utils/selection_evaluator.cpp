@@ -96,7 +96,7 @@ int remaining_orders) {
         }
 
         for (const auto& edge_id : graph.get_node(current.node_id).edges) {
-            if (selected_edges.at(edge_id) == 0) {
+            if (!selected_edges.at(edge_id)) {
                 continue;
             }
 

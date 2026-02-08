@@ -1,6 +1,7 @@
 #include <vector>
 #include <cstdint>
 #include <random>
+#include <iostream>
 
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
@@ -58,9 +59,9 @@ std::vector<Chromosome> population) {
     std::vector<Chromosome> new_population{};
     
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
-        double fitness{ m_selection_evaluator.evaluate(graph, requests, population.at(i)) };
-        m_max_profit = std::max(m_max_profit, fitness);
-        population_fitness[i] = fitness;
+        double profit{ m_selection_evaluator.evaluate(graph, requests, population.at(i)) };
+        m_max_profit = std::max(m_max_profit, profit);
+        population_fitness[i] = std::max(profit, 0.0);
     }
 
     std::vector<std::size_t> selected{ stochastic_universal_sampling(population_fitness) };
@@ -70,7 +71,7 @@ std::vector<Chromosome> population) {
         auto& parent1{ population.at(selected.at(i)) };
         auto& parent2{ population.at(selected.at(i + 1)) };
         
-        if (m_ga.crossover_rate < dist(m_gen)) {
+        if (dist(m_gen) < m_ga.crossover_rate) {
             crossover(parent1, parent2);
         }
 
@@ -113,9 +114,12 @@ std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(c
 }
 
 void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2) {
-    std::uniform_int_distribution dist(0, static_cast<int>(parent1.size()));
-    std::size_t start_idx{ static_cast<std::size_t>(dist(m_gen)) };
-    std::size_t end_idx{ static_cast<std::size_t>(dist(m_gen)) };
+    std::uniform_int_distribution dist(0, static_cast<int>(parent1.size()) - 1);
+    int first_point{ dist(m_gen) };
+    int second_point{ dist(m_gen) };
+
+    std::size_t start_idx{ static_cast<std::size_t>(std::min(first_point, second_point)) };
+    std::size_t end_idx{ static_cast<std::size_t>(std::max(first_point, second_point)) };
 
     for (std::size_t i = 0; i < parent1.size(); ++i) {
         if (i >= start_idx && i <= end_idx) {
@@ -127,9 +131,9 @@ void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2)
 }
 
 void GeneticAlgorithmSolver::mutate(Chromosome& offspring) {
-    std::uniform_real_distribution<> dist(0.0, 1.0);
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
     for (std::size_t i = 0; i < offspring.size(); ++i) {
-        if (m_ga.mutation_rate < dist(m_gen)) {
+        if (dist(m_gen) < m_ga.mutation_rate) {
             offspring[i] ^= 1;
         }
     }
