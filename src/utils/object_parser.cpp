@@ -86,7 +86,7 @@ Config ObjectParser::parseArgs(int argc, char* argv[]) {
     Config config{};
 
     for (int i = 0; i < argc; ++i) {
-        std::string arg{ argv[i] };
+        std::string arg = argv[i];
 
         if (arg == "--graph" || arg == "-g") {
             config.graph_file_path = argv[++i];

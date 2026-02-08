@@ -29,9 +29,9 @@ const std::vector<uint64_t>& selected_edges) {
     double total_profit{ 0 };
 
     for (const auto& request : requests) {
-        int remaining_orders{ request.num_orders };
+        int remaining_orders = request.num_orders;
         while (remaining_orders > 0) {
-            int processed_orders{ get_processed_orders(graph, request, selected_edges, path_flow, remaining_orders) };
+            int processed_orders = get_processed_orders(graph, request, selected_edges, path_flow, remaining_orders);
             if (processed_orders == 0) {
                 return -(std::numeric_limits<double>::infinity());
             }
@@ -41,8 +41,8 @@ const std::vector<uint64_t>& selected_edges) {
 
         for (int i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
-                const auto& edge{ graph.get_edge(i) };
-                double gross_profit{ m_max_order_profit * (1 - edge.latency / m_max_latency) };
+                const auto& edge = graph.get_edge(i);
+                double gross_profit = m_max_order_profit * (1 - edge.latency / m_max_latency);
                 total_profit += gross_profit * path_flow.at(i);
             }
         }

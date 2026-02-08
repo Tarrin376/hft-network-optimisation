@@ -16,10 +16,11 @@ public:
     double solve(const Graph& graph, const ExpectedRequests& requests) override;
 
 private:
-    double backtrack(const Graph& graph, 
-                     const ExpectedRequests& requests, 
-                     std::vector<uint64_t>& selected_edges, 
-                     std::size_t index);
+    double backtrack(
+        const Graph& graph, 
+        const ExpectedRequests& requests, 
+        std::vector<uint64_t>& selected_edges, 
+        std::size_t index);
 };
 
 #endif

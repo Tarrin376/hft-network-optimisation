@@ -28,7 +28,6 @@ public:
     const Edge& get_edge(std::size_t edge_id) const;
     const Node& get_node(std::size_t node_id) const;
 
-    // Returns edge IDs of outgoing edges
     const std::vector<std::size_t>& outgoing(std::size_t node_id) const;
 
     std::size_t get_num_nodes() const;

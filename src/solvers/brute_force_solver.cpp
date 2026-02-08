@@ -16,10 +16,11 @@ double BruteForceSolver::solve(const Graph& graph, const ExpectedRequests& reque
     return total_profit;
 }
 
-double BruteForceSolver::backtrack(const Graph& graph, 
-                                   const ExpectedRequests& requests, 
-                                   std::vector<uint64_t>& selected_edges, 
-                                   std::size_t index) {
+double BruteForceSolver::backtrack(
+const Graph& graph,
+const ExpectedRequests& requests, 
+std::vector<uint64_t>& selected_edges, 
+std::size_t index) {
     if (index == graph.get_num_edges()) {
         return m_selection_evaluator.evaluate(graph, requests, selected_edges);
     }
