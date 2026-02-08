@@ -64,12 +64,12 @@ std::vector<Chromosome> population) {
         population_fitness[i] = std::max(profit, 0.0);
     }
 
-    std::vector<std::size_t> selected{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(population_fitness) };
     std::uniform_real_distribution<> dist(0.0, 1.0);
 
     for (std::size_t i = 0; i < m_ga.population_size - 1; i += 2) {
-        auto& parent1{ population.at(selected.at(i)) };
-        auto& parent2{ population.at(selected.at(i + 1)) };
+        auto& parent1{ population.at(selected_parents.at(i)) };
+        auto& parent2{ population.at(selected_parents.at(i + 1)) };
         
         if (dist(m_gen) < m_ga.crossover_rate) {
             crossover(parent1, parent2);
@@ -86,7 +86,7 @@ std::vector<Chromosome> population) {
 }
 
 std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(const std::vector<double>& population_fitness) {
-    std::vector<std::size_t> selected(m_ga.population_size, 0);
+    std::vector<std::size_t> selected_parents(m_ga.population_size, 0);
     double fitness_total{ 0 };
 
     for (auto fitness : population_fitness) {
@@ -106,11 +106,11 @@ std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(c
             cumulative += population_fitness.at(idx);
         }
 
-        selected[i] = idx;
+        selected_parents[i] = idx;
         pointer += step;
     }
 
-    return selected;
+    return selected_parents;
 }
 
 void GeneticAlgorithmSolver::crossover(Chromosome& parent1, Chromosome& parent2) {
