@@ -13,7 +13,7 @@ public:
     virtual double solve(
         const Graph& graph, 
         const ExpectedRequests& requests
-    ) const = 0;
+    ) = 0;
 
 protected:
     Solver(int max_order_profit, double max_latency) 

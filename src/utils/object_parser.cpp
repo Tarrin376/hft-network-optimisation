@@ -99,18 +99,18 @@ Config ObjectParser::parseArgs(int argc, char* argv[]) {
         } else if (arg == "--maxlatency" || arg == "-l") {
             config.max_latency = std::stod(argv[++i]); 
         } else if (arg == "--population") {
-            config.ga.population = std::stoi(argv[++i]);
+            config.ga.population_size = std::stoi(argv[++i]);
         } else if (arg == "--generations") {
             config.ga.generations = std::stoi(argv[++i]);
         } else if (arg == "--mutation") {
             config.ga.mutation_rate = std::stod(argv[++i]);
         } else if (arg == "--crossover") {
             config.ga.crossover_rate = std::stod(argv[++i]);
-        } else if (arg == "--tournament-k") {
-            config.ga.tournament_k = std::stoi(argv[++i]);
+        } else if (arg == "--initial-bit-flip-rate") {
+            config.ga.initial_bit_flip_rate = std::stod(argv[++i]);
         } else if (arg == "--seed") {
             config.ga.seed = static_cast<unsigned>(std::stoul(argv[++i]));
-        }
+        } 
     }
 
     return config;

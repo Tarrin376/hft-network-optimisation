@@ -13,13 +13,13 @@ class BruteForceSolver : public Solver {
 public:
     BruteForceSolver(int max_order_profit, double max_latency);
 
-    double solve(const Graph& graph, const ExpectedRequests& requests) const override;
+    double solve(const Graph& graph, const ExpectedRequests& requests) override;
 
 private:
     double backtrack(const Graph& graph, 
                      const ExpectedRequests& requests, 
                      std::vector<uint8_t>& selected_edges, 
-                     std::size_t index) const;
+                     std::size_t index);
 };
 
 #endif

@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     }
 
     double max_profit{ solver->solve(*graph, requests) };
-    if (max_profit == -1) {
+    if (max_profit == 0) {
         std::cout << "No suitable network configuration found for the given set of requests.\n";
     } else {
         std::cout << "Total profit: " << max_profit << '\n';

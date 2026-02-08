@@ -2,12 +2,12 @@
 #define GA_CONFIG_H
 
 struct GAConfig {
-    int population = 200;
-    int generations = 500;
+    int population_size = 20;
+    int generations = 90;
     double mutation_rate = 0.05;
     double crossover_rate = 0.8;
-    int tournament_k = 3;
-    unsigned seed = 42;
+    double initial_bit_flip_rate = 0.01;
+    unsigned int seed = 42;
 };
 
 #endif

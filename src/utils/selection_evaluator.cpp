@@ -12,16 +12,18 @@ SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency)
     : m_max_order_profit{ max_order_profit }
     , m_max_latency{ max_latency } {}
 
-double SelectionEvaluator::evaluate(const Graph& graph, 
-                                    const ExpectedRequests& requests, 
-                                    const std::vector<uint8_t>& selected_edges) const {
+double SelectionEvaluator::evaluate(
+const Graph& graph, 
+const ExpectedRequests& requests, 
+const std::vector<uint8_t>& selected_edges) {
     auto total_profit{ find_total_profit(graph, requests, selected_edges) };
     return total_profit;
 }
 
-double SelectionEvaluator::find_total_profit(const Graph& graph, 
-                                             const ExpectedRequests& requests, 
-                                             const std::vector<uint8_t>& selected_edges) const {
+double SelectionEvaluator::find_total_profit(
+const Graph& graph, 
+const ExpectedRequests& requests, 
+const std::vector<uint8_t>& selected_edges) {
     std::size_t num_edges{ graph.get_num_edges() };
     std::vector<int> path_flow(num_edges, 0);
     double total_profit{ 0 };
@@ -31,31 +33,38 @@ double SelectionEvaluator::find_total_profit(const Graph& graph,
         while (remaining_orders > 0) {
             int processed_orders{ get_processed_orders(graph, request, selected_edges, path_flow, remaining_orders) };
             if (processed_orders == 0) {
-                return -1;
+                return -(std::numeric_limits<double>::infinity());
             }
             
             remaining_orders -= processed_orders;
         }
 
         for (int i = 0; i < num_edges; ++i) {
-            if (selected_edges[i]) {
+            if (selected_edges.at(i)) {
                 const auto& edge{ graph.get_edge(i) };
                 double gross_profit{ m_max_order_profit * (1 - edge.latency / m_max_latency) };
-                total_profit += gross_profit * path_flow.at(i) - edge.lease_cost;
+                total_profit += gross_profit * path_flow.at(i);
             }
         }
 
         path_flow.assign(num_edges, 0);
     }
 
+    for (std::size_t i = 0; i < num_edges; ++i) {
+        if (selected_edges.at(i)) {
+            total_profit -= graph.get_edge(i).lease_cost;
+        }
+    }
+
     return total_profit;
 }
 
-int SelectionEvaluator::get_processed_orders(const Graph& graph, 
-                                             const Request& request, 
-                                             const std::vector<uint8_t>& selected_edges, 
-                                             std::vector<int>& path_flow,
-                                             int remaining_orders) const {
+int SelectionEvaluator::get_processed_orders(
+const Graph& graph, 
+const Request& request, 
+const std::vector<uint8_t>& selected_edges, 
+std::vector<int>& path_flow,
+int remaining_orders) {
     struct State {
         double latency;
         std::size_t node_id;
@@ -82,12 +91,12 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
             return process_orders(request, parent_edge_buffer, path_flow, remaining_orders);
         }
 
-        if (current.latency > min_latency_buffer[current.node_id]) {
+        if (current.latency > min_latency_buffer.at(current.node_id)) {
             continue;
         }
 
         for (const auto& edge_id : graph.get_node(current.node_id).edges) {
-            if (selected_edges[edge_id] == 0) {
+            if (selected_edges.at(edge_id) == 0) {
                 continue;
             }
 
@@ -110,10 +119,11 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
     return 0;
 }
 
-int SelectionEvaluator::process_orders(const Request& request, 
-                                       std::vector<const Edge*>& parent_edge_buffer,
-                                       std::vector<int>& path_flow, 
-                                       int remaining_orders) const {
+int SelectionEvaluator::process_orders(
+const Request& request, 
+std::vector<const Edge*>& parent_edge_buffer,
+std::vector<int>& path_flow, 
+int remaining_orders) {
     const Edge* cur_edge{ parent_edge_buffer.at(request.exchange) };
     int min_rate_limit{ cur_edge->rate_limit };
 

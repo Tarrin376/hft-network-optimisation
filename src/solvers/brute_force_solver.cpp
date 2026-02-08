@@ -10,7 +10,7 @@
 BruteForceSolver::BruteForceSolver(int max_order_profit, double max_latency) 
 : Solver{ max_order_profit, max_latency } {}
 
-double BruteForceSolver::solve(const Graph& graph, const ExpectedRequests& requests) const {
+double BruteForceSolver::solve(const Graph& graph, const ExpectedRequests& requests) {
     std::vector<uint8_t> selected_edges(graph.get_num_edges(), 0);
 
     auto total_profit{ backtrack(graph, requests, selected_edges, 0) };
@@ -20,7 +20,7 @@ double BruteForceSolver::solve(const Graph& graph, const ExpectedRequests& reque
 double BruteForceSolver::backtrack(const Graph& graph, 
                                    const ExpectedRequests& requests, 
                                    std::vector<uint8_t>& selected_edges, 
-                                   std::size_t index) const {
+                                   std::size_t index) {
     if (index == graph.get_num_edges()) {
         return m_selection_evaluator.evaluate(graph, requests, selected_edges);
     }
