@@ -14,6 +14,7 @@
 class GeneticAlgorithmSolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
+    
     GeneticAlgorithmSolver(int max_order_profit, double max_latency, const GAConfig& ga);
 
     double solve(const Graph& graph, const ExpectedRequests& requests) override;
