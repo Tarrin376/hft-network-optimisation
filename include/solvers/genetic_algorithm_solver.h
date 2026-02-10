@@ -21,12 +21,12 @@ public:
 private:
     std::vector<Chromosome> build_initial_population(std::size_t num_edges);
     
-    std::vector<Chromosome> reproduce(
-        const Graph& graph, 
-        const ExpectedRequests& requests, 
-        std::vector<Chromosome> population);
+    std::vector<Chromosome> reproduce(const Graph& graph, 
+                                      const ExpectedRequests& requests, 
+                                      std::vector<Chromosome> population);
 
     std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& population_fitness);
+    
     void crossover(Chromosome& parent1, Chromosome& parent2, std::size_t num_edges);
     void mutate(Chromosome& offspring);
 

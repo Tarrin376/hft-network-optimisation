@@ -54,20 +54,19 @@ std::vector<GeneticAlgorithmSolver::Chromosome> GeneticAlgorithmSolver::build_in
     return population;
 }
 
-std::vector<GeneticAlgorithmSolver::Chromosome> GeneticAlgorithmSolver::reproduce(
-const Graph& graph, 
-const ExpectedRequests& requests, 
-std::vector<Chromosome> population) {
-    std::vector<double> population_fitness(m_ga.population_size, 0);
+std::vector<GeneticAlgorithmSolver::Chromosome> GeneticAlgorithmSolver::reproduce(const Graph& graph, 
+                                                                                  const ExpectedRequests& requests, 
+                                                                                  std::vector<Chromosome> population) {
+    std::vector<double> pop_fitness(m_ga.population_size, 0);
     std::vector<Chromosome> new_population{};
     
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
         double profit = m_selection_evaluator.evaluate(graph, requests, population.at(i));
         m_max_profit = std::max(m_max_profit, profit);
-        population_fitness[i] = std::max(profit, 0.0);
+        pop_fitness[i] = std::max(profit, 0.0);
     }
 
-    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(pop_fitness) };
     std::uniform_real_distribution<> dist(0.0, 1.0);
 
     for (std::size_t i = 0; i < m_ga.population_size - 1; i += 2) {
@@ -88,25 +87,25 @@ std::vector<Chromosome> population) {
     return new_population;
 }
 
-std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(const std::vector<double>& population_fitness) {
+std::vector<std::size_t> GeneticAlgorithmSolver::stochastic_universal_sampling(const std::vector<double>& pop_fitness) {
     std::vector<std::size_t> selected_parents(m_ga.population_size, 0);
     double fitness_total{ 0 };
 
-    for (auto fitness : population_fitness) {
+    for (auto fitness : pop_fitness) {
         fitness_total += fitness;
     }
 
     const double step{ fitness_total / static_cast<double>(m_ga.population_size) };
     std::uniform_real_distribution<double> dist(0.0, step);
 
-    double cumulative{ population_fitness.at(0) };
+    double cumulative{ pop_fitness.at(0) };
     double pointer{ dist(m_gen) };
     std::size_t idx{ 0 };
 
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
         while (cumulative < pointer) {
             ++idx;
-            cumulative += population_fitness.at(idx);
+            cumulative += pop_fitness.at(idx);
         }
 
         selected_parents[i] = idx;

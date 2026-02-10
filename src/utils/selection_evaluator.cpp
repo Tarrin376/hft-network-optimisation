@@ -12,18 +12,16 @@ SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency)
     : m_max_order_profit{ max_order_profit }
     , m_max_latency{ max_latency } {}
 
-double SelectionEvaluator::evaluate(
-const Graph& graph, 
-const ExpectedRequests& requests, 
-const std::vector<uint64_t>& selected_edges) {
+double SelectionEvaluator::evaluate(const Graph& graph, 
+                                    const ExpectedRequests& requests,
+                                    const std::vector<uint64_t>& selected_edges) const {
     auto total_profit{ find_total_profit(graph, requests, selected_edges) };
     return total_profit;
 }
 
-double SelectionEvaluator::find_total_profit(
-const Graph& graph, 
-const ExpectedRequests& requests, 
-const std::vector<uint64_t>& selected_edges) {
+double SelectionEvaluator::find_total_profit(const Graph& graph, 
+                                             const ExpectedRequests& requests, 
+                                             const std::vector<uint64_t>& selected_edges) const {
     std::size_t num_edges{ graph.get_num_edges() };
     std::vector<int> path_flow(num_edges, 0);
     double total_profit{ 0 };
@@ -59,12 +57,11 @@ const std::vector<uint64_t>& selected_edges) {
     return total_profit;
 }
 
-int SelectionEvaluator::get_processed_orders(
-const Graph& graph, 
-const Request& request, 
-const std::vector<uint64_t>& selected_edges, 
-std::vector<int>& path_flow,
-int remaining_orders) {
+int SelectionEvaluator::get_processed_orders(const Graph& graph, 
+                                             const Request& request, 
+                                             const std::vector<uint64_t>& selected_edges, 
+                                             std::vector<int>& path_flow,
+                                             int remaining_orders) const {
     struct State {
         double latency;
         std::size_t node_id;
@@ -119,11 +116,10 @@ int remaining_orders) {
     return 0;
 }
 
-int SelectionEvaluator::process_orders(
-const Request& request, 
-std::vector<const Edge*>& parent_edge_buffer,
-std::vector<int>& path_flow, 
-int remaining_orders) {
+int SelectionEvaluator::process_orders(const Request& request, 
+                                       std::vector<const Edge*>& parent_edge_buffer,
+                                       std::vector<int>& path_flow, 
+                                       int remaining_orders) const {
     const Edge* cur_edge{ parent_edge_buffer.at(request.exchange) };
     int min_rate_limit{ cur_edge->rate_limit };
 
@@ -143,6 +139,6 @@ int remaining_orders) {
     return processed_orders;
 }
 
-bool SelectionEvaluator::edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) {
+bool SelectionEvaluator::edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) const {
     return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
 }

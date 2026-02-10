@@ -11,34 +11,30 @@ class SelectionEvaluator {
 public:
     SelectionEvaluator(int max_order_profit, double max_latency);
 
-    double evaluate(
-        const Graph& graph, 
-        const ExpectedRequests& requests, 
-        const std::vector<uint64_t>& selected_edges);
+    double evaluate(const Graph& graph, 
+                    const ExpectedRequests& requests, 
+                    const std::vector<uint64_t>& selected_edges) const;
 
 private:
-    double find_total_profit(
-        const Graph& graph, 
-        const ExpectedRequests& requests, 
-        const std::vector<uint64_t>& selected_edges);
+    double find_total_profit(const Graph& graph, 
+                             const ExpectedRequests& requests, 
+                             const std::vector<uint64_t>& selected_edges) const;
 
-    int get_processed_orders(
-        const Graph& graph, 
-        const Request& request, 
-        const std::vector<uint64_t>& selected_edges,
-        std::vector<int>& path_flow,
-        int remaining_orders);
+    int get_processed_orders(const Graph& graph, 
+                             const Request& request, 
+                             const std::vector<uint64_t>& selected_edges,
+                             std::vector<int>& path_flow,
+                             int remaining_orders) const;
 
-    int process_orders(
-        const Request& request, 
-        std::vector<const Edge*>& parent_edge_buffer,
-        std::vector<int>& path_flow,
-        int remaining_orders);
+    int process_orders(const Request& request, 
+                       std::vector<const Edge*>& parent_edge_buffer,
+                       std::vector<int>& path_flow,
+                       int remaining_orders) const;
 
-    bool edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges);
+    bool edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) const;
 
-    int m_max_order_profit{};
-    double m_max_latency{};
+    const int m_max_order_profit{};
+    const double m_max_latency{};
 };
 
 #endif
