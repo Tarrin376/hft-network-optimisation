@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.28.3)
-
 project(HFT LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -7,43 +6,43 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# Catch2
+# HFT Library
+file(GLOB_RECURSE LIB_SOURCES src/*.cpp)
+list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.cpp") 
+
+add_library(hft_lib ${LIB_SOURCES})
+target_include_directories(hft_lib PUBLIC include)
+
+# Main App
+add_executable(${PROJECT_NAME} src/main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE hft_lib)
+
+# OpenMP
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(hft_lib PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+# Google Test
 FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.12.0
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.17.0
 )
-FetchContent_MakeAvailable(Catch2)
+FetchContent_MakeAvailable(googletest)
+
+file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
+add_executable(unit_tests ${TEST_SOURCES})
+target_link_libraries(unit_tests PRIVATE GTest::gtest_main hft_lib)
 
 # Google Benchmark
-set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   benchmark
   GIT_REPOSITORY https://github.com/google/benchmark.git
-  GIT_TAG v1.9.5
+  GIT_TAG v1.9.1
 )
 FetchContent_MakeAvailable(benchmark)
 
-# App executable
-file(GLOB_RECURSE SOURCES src/*.cpp)
-file(GLOB_RECURSE HEADERS include/*.h)
-
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
-target_link_libraries(${PROJECT_NAME} PRIVATE)
-target_include_directories(${PROJECT_NAME} PUBLIC include)
-
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-  target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
-endif()
-
-# Unit tests with Catch2
-add_executable(my_tests tests/test_main.cpp)
-target_link_libraries(my_tests PRIVATE Catch2::Catch2WithMain)
-
-enable_testing()
-add_test(NAME my_tests COMMAND my_tests)
-
-# Benchmarks with Google Benchmark
-add_executable(my_bench benchmarks/bench_main.cpp)
-target_link_libraries(my_bench PRIVATE benchmark::benchmark)
+file(GLOB_RECURSE BENCH_SOURCES benchmarks/*.cpp)
+add_executable(bench ${BENCH_SOURCES})
+target_link_libraries(bench PRIVATE benchmark::benchmark hft_lib)
