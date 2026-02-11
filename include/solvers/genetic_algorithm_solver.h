@@ -51,7 +51,7 @@ protected:
         std::size_t idx{ 0 };
 
         for (std::size_t i = 0; i < m_ga.population_size; ++i) {
-            while (cumulative < pointer) {
+            while (pointer > cumulative) {
                 ++idx;
                 cumulative += population_fitness.at(idx);
             }
@@ -63,10 +63,7 @@ protected:
         return selected_parents;
     }
 
-    void crossover(Chromosome& parent1, Chromosome& parent2, int first_point, int second_point) {
-        int start_idx{ std::min(first_point, second_point) };
-        int end_idx{ std::max(first_point, second_point) };
-
+    void crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
         int start_block{ start_idx / 64 };
         int end_block{ end_idx / 64 };
 
@@ -145,7 +142,9 @@ private:
             
             if (dist(m_gen) < m_ga.crossover_rate) {
                 std::uniform_int_distribution<int> point_dist(0, static_cast<int>(graph.get_num_edges()) - 1);
-                crossover(parent1, parent2, point_dist(m_gen), point_dist(m_gen));
+                int start{ point_dist(m_gen) };
+                int end{ point_dist(m_gen) };
+                crossover(parent1, parent2, std::min(start, end), std::max(start, end));
             }
 
             mutate(parent1);
