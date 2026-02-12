@@ -10,13 +10,13 @@
 
 #include "solvers/solver.h"
 #include "solvers/brute_force_solver.h"
-#include "solvers/genetic_algorithm_solver.h"
+#include "solvers/ga_solver.h"
 
 std::unique_ptr<Solver> determineSolver(const Config& config) {
     if (config.algorithm == "brute_force") {
         return std::make_unique<BruteForceSolver>(config.max_order_profit, config.max_latency);
     } else if (config.algorithm == "genetic") {
-        return std::make_unique<GeneticAlgorithmSolver<>>(config.max_order_profit, config.max_latency, config.ga);
+        return std::make_unique<GASolver>(config.max_order_profit, config.max_latency, config.ga);
     } else {
         return nullptr;
     }

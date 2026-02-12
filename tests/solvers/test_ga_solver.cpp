@@ -2,27 +2,12 @@
 #include <vector>
 #include <cstdint>
 
-#include "solvers/genetic_algorithm_solver.h"
+#include "solvers/ga_solver.h"
 #include "types/config.h"
 
-struct MockGenerator {
-    using result_type = std::uint64_t;
-    
-    static constexpr result_type min() { return 0; }
-    static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
-
-    void set_probability(double val) {
-        last_value = static_cast<result_type>(val * static_cast<double>(max()));
-    }
-
-    result_type last_value = 0;
-    result_type operator()() { return last_value; }
-};
-
-class GeneticAlgorithmSolverTest : public GeneticAlgorithmSolver<MockGenerator>, public testing::Test {
+class GASolverTest : public GASolver, public testing::Test {
 protected:
-    GeneticAlgorithmSolverTest() 
-    : GeneticAlgorithmSolver{ 100, 100, GAConfig { 
+    GASolverTest() : GASolver{ 100, 100, GAConfig { 
         .population_size = 5,
         .generations = 2,
         .mutation_rate = 0.05,
@@ -30,29 +15,42 @@ protected:
         .initial_bit_flip_rate = 0.01,
         .seed = 34,
     } } {}
+
+    double get_random_double(double min, double max) override {
+        return m_rand_double_prob;
+    }
+
+    void set_random_double_prob(double prob) {
+        m_rand_double_prob = prob;
+    }
+
+    void TearDown() override {
+        m_rand_double_prob = 0.0;
+    }
+
+private:
+    double m_rand_double_prob{};
 };
 
-TEST_F(GeneticAlgorithmSolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
+TEST_F(GASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
     Chromosome c{ 0b1011101101ULL }; 
     uint64_t original_val{ c[0] };
 
-    m_gen.set_probability(0.9);
+    set_random_double_prob(0.9);
     mutate(c);
 
     EXPECT_EQ(c[0], original_val);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
+TEST_F(GASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
     Chromosome c{ 0ULL }; 
-
-    m_gen.set_probability(0.0); 
     mutate(c);
 
     uint64_t expected{ 0x7FFFFFFFFFFFFFFFULL };
     EXPECT_EQ(c[0], expected);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsMiddleSegment) {
+TEST_F(GASolverTest, CrossoverSwapsMiddleSegment) {
     Chromosome p1{ 0, ~0ULL, 0 };
     Chromosome p2{ ~0ULL, 0, ~0ULL };
 
@@ -65,7 +63,7 @@ TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsMiddleSegment) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsSingleBits) {
+TEST_F(GASolverTest, CrossoverSwapsSingleBits) {
     Chromosome p1{ 1 };
     Chromosome p2{ 0 };
 
@@ -78,7 +76,7 @@ TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsSingleBits) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsAllBits) {
+TEST_F(GASolverTest, CrossoverSwapsAllBits) {
     Chromosome p1{ ~0ULL, ~0ULL, ~0ULL };
     Chromosome p2{ 0, 0, 0 };
 
@@ -91,9 +89,8 @@ TEST_F(GeneticAlgorithmSolverTest, CrossoverSwapsAllBits) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
+TEST_F(GASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
     std::vector<double> population_fitness{ 6, 2, 2 };
-    m_gen.set_probability(0.0);
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 1 };
     std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
@@ -101,9 +98,8 @@ TEST_F(GeneticAlgorithmSolverTest, StochasticUniversalSamplingHandlesPositiveInt
     EXPECT_EQ(ans, expected_ans);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
+TEST_F(GASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
     std::vector<double> population_fitness{ 6, 0, 4 };
-    m_gen.set_probability(0.0);
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 2 };
     std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
@@ -111,9 +107,8 @@ TEST_F(GeneticAlgorithmSolverTest, StochasticUniversalSamplingHandlesZeroFitness
     EXPECT_EQ(ans, expected_ans);
 }
 
-TEST_F(GeneticAlgorithmSolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
+TEST_F(GASolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
     std::vector<double> population_fitness{ 4.2, 3.6, 2.2 };
-    m_gen.set_probability(0.0);
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 1, 2 };
     std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
