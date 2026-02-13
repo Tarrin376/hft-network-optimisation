@@ -30,17 +30,17 @@ void Graph::add_edge(const Edge& edge, bool source_is_server) {
 
 const Edge& Graph::get_edge(std::size_t edge_id) const {
     assert(edge_id < m_num_edges);
-    return m_edges.at(edge_id);
+    return m_edges[edge_id];
 }
 
 const Node& Graph::get_node(std::size_t node_id) const {
     assert(node_id < m_num_nodes);
-    return m_nodes.at(node_id);
+    return m_nodes[node_id];
 }
 
 const std::vector<std::size_t>& Graph::outgoing(std::size_t node_id) const {
     assert(node_id < m_num_nodes);
-    return m_nodes.at(node_id).edges;
+    return m_nodes[node_id].edges;
 }
 
 std::size_t Graph::get_num_nodes() const {

@@ -43,7 +43,7 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
     }
 
     const double step{ fitness_total / static_cast<double>(m_ga.population_size) };
-    double cumulative{ population_fitness.at(0) };
+    double cumulative{ population_fitness[0] };
 
     double pointer{ get_random_double(0.0, step) };
     std::size_t idx{ 0 };
@@ -51,7 +51,7 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
         while (pointer > cumulative) {
             ++idx;
-            cumulative += population_fitness.at(idx);
+            cumulative += population_fitness[idx];
         }
 
         selected_parents[i] = idx;
@@ -118,7 +118,7 @@ std::vector<GASolver::Chromosome> GASolver::reproduce(const Graph& graph, const 
     std::vector<Chromosome> new_population{};
     
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
-        double profit = m_selection_evaluator.evaluate(graph, requests, population.at(i));
+        double profit = m_selection_evaluator.evaluate(graph, requests, population[i]);
         m_max_profit = std::max(m_max_profit, profit);
         population_fitness[i] = std::max(profit, 0.0);
     }
@@ -126,8 +126,8 @@ std::vector<GASolver::Chromosome> GASolver::reproduce(const Graph& graph, const 
     std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(population_fitness) };
 
     for (std::size_t i = 0; i < m_ga.population_size - 1; i += 2) {
-        auto& parent1 = population.at(selected_parents.at(i));
-        auto& parent2 = population.at(selected_parents.at(i + 1));
+        auto& parent1 = population[selected_parents[i]];
+        auto& parent2 = population[selected_parents[i + 1]];
         
         if (get_random_double(0.0, 1.0) < m_ga.crossover_rate) {
             std::uniform_int_distribution<int> point_dist(0, static_cast<int>(graph.get_num_edges()) - 1);

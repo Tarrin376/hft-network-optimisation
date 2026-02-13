@@ -41,7 +41,7 @@ double SelectionEvaluator::find_total_profit(const Graph& graph,
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = graph.get_edge(i);
                 double gross_profit = m_max_order_profit * (1 - edge.latency / m_max_latency);
-                total_profit += gross_profit * path_flow.at(i);
+                total_profit += gross_profit * path_flow[i];
             }
         }
 
@@ -88,7 +88,7 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
             return process_orders(request, parent_edge_buffer, path_flow, remaining_orders);
         }
 
-        if (current.latency > min_latency_buffer.at(current.node_id)) {
+        if (current.latency > min_latency_buffer[current.node_id]) {
             continue;
         }
 
@@ -98,7 +98,7 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
             }
 
             const Edge& edge = graph.get_edge(edge_index);
-            int current_flow = path_flow.at(edge_index);
+            int current_flow = path_flow[edge_index];
             
             if (current_flow == edge.rate_limit * request.planning_horizon) {
                 continue;
@@ -120,20 +120,20 @@ int SelectionEvaluator::process_orders(const Request& request,
                                        std::vector<const Edge*>& parent_edge_buffer,
                                        std::vector<int>& path_flow, 
                                        int remaining_orders) const {
-    const Edge* cur_edge{ parent_edge_buffer.at(request.exchange) };
+    const Edge* cur_edge{ parent_edge_buffer[request.exchange] };
     int min_rate_limit{ cur_edge->rate_limit };
 
     while (cur_edge) {
         min_rate_limit = std::min(min_rate_limit, cur_edge->rate_limit);
-        cur_edge = parent_edge_buffer.at(cur_edge->source);
+        cur_edge = parent_edge_buffer[cur_edge->source];
     }
 
     int processed_orders{ std::min(remaining_orders, min_rate_limit * request.planning_horizon) };
-    cur_edge = parent_edge_buffer.at(request.exchange);
+    cur_edge = parent_edge_buffer[request.exchange];
 
     while (cur_edge) {
-        path_flow.at(cur_edge->id) += processed_orders;
-        cur_edge = parent_edge_buffer.at(cur_edge->source);
+        path_flow[cur_edge->id] += processed_orders;
+        cur_edge = parent_edge_buffer[cur_edge->source];
     }
 
     return processed_orders;

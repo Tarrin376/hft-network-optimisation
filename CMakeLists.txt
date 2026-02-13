@@ -13,15 +13,25 @@ list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.cpp")
 add_library(hft_lib ${LIB_SOURCES})
 target_include_directories(hft_lib PUBLIC include)
 
-# Main App
-add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE hft_lib)
-
 # OpenMP
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
   target_link_libraries(hft_lib PUBLIC OpenMP::OpenMP_CXX)
 endif()
+
+# Google OR-Tools
+FetchContent_Declare(
+  or-tools
+  GIT_REPOSITORY https://github.com/google/or-tools.git
+  GIT_TAG main
+)
+
+FetchContent_MakeAvailable(or-tools)
+target_link_libraries(hft_lib PUBLIC ortools::ortools)
+
+# Main App
+add_executable(${PROJECT_NAME} src/main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE hft_lib)
 
 # Google Test
 FetchContent_Declare(
@@ -46,3 +56,4 @@ FetchContent_MakeAvailable(benchmark)
 file(GLOB_RECURSE BENCH_SOURCES benchmarks/*.cpp)
 add_executable(bench ${BENCH_SOURCES})
 target_link_libraries(bench PRIVATE benchmark::benchmark hft_lib)
+
