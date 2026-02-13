@@ -25,7 +25,7 @@ protected:
     }
 
     void TearDown() override {
-        m_rand_double_prob = 0.0;
+        set_random_double_prob(0.0);
     }
 
 private:
@@ -46,7 +46,7 @@ TEST_F(GASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
     Chromosome c{ 0ULL }; 
     mutate(c);
 
-    uint64_t expected{ 0x7FFFFFFFFFFFFFFFULL };
+    uint64_t expected{ ~0ULL };
     EXPECT_EQ(c[0], expected);
 }
 

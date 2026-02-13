@@ -80,7 +80,7 @@ void GASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx
 
 void GASolver::mutate(Chromosome& offspring) {
     for (std::size_t i = 0; i < offspring.size(); ++i) {
-        for (int j = 0; j < 63; ++j) {
+        for (int j = 0; j < 64; ++j) {
             if (get_random_double(0.0, 1.0) < m_ga.mutation_rate) {
                 offspring[i] ^= (1ULL << j);
             }
