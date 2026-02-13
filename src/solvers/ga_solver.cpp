@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <random>
+#include <numeric>
 
 #include "utils/bit_utils.h"
 
@@ -34,16 +35,12 @@ double GASolver::get_random_double(double min, double max) {
     return dist(m_gen);
 }
 
-std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& population_fitness) {
+std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& weights) {
     std::vector<std::size_t> selected_parents(m_ga.population_size, 0);
-    double fitness_total{ 0 };
+    double total{ std::accumulate(weights.begin(), weights.end(), 0.0) };
 
-    for (auto fitness : population_fitness) {
-        fitness_total += fitness;
-    }
-
-    const double step{ fitness_total / static_cast<double>(m_ga.population_size) };
-    double cumulative{ population_fitness[0] };
+    const double step{ total / static_cast<double>(m_ga.population_size) };
+    double cumulative{ weights[0] };
 
     double pointer{ get_random_double(0.0, step) };
     std::size_t idx{ 0 };
@@ -51,7 +48,7 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
         while (pointer > cumulative) {
             ++idx;
-            cumulative += population_fitness[idx];
+            cumulative += weights[idx];
         }
 
         selected_parents[i] = idx;
@@ -114,16 +111,16 @@ std::vector<GASolver::Chromosome> GASolver::build_initial_population(std::size_t
 }
 
 std::vector<GASolver::Chromosome> GASolver::reproduce(const Graph& graph, const ExpectedRequests& requests, std::vector<Chromosome> population) {
-    std::vector<double> population_fitness(m_ga.population_size, 0);
+    std::vector<double> weights(m_ga.population_size, 0);
     std::vector<Chromosome> new_population{};
     
     for (std::size_t i = 0; i < m_ga.population_size; ++i) {
         double profit = m_selection_evaluator.evaluate(graph, requests, population[i]);
         m_max_profit = std::max(m_max_profit, profit);
-        population_fitness[i] = std::max(profit, 0.0);
+        weights[i] = std::max(profit, 0.0);
     }
 
-    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(weights) };
 
     for (std::size_t i = 0; i < m_ga.population_size - 1; i += 2) {
         auto& parent1 = population[selected_parents[i]];

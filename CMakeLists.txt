@@ -23,10 +23,10 @@ endif()
 FetchContent_Declare(
   or-tools
   GIT_REPOSITORY https://github.com/google/or-tools.git
-  GIT_TAG main
+  GIT_TAG v9.15
 )
-
 FetchContent_MakeAvailable(or-tools)
+
 target_link_libraries(hft_lib PUBLIC ortools::ortools)
 
 # Main App
