@@ -11,8 +11,8 @@ public:
     virtual ~Solver() = default;
 
     virtual double solve(
-        const Graph& graph, 
-        const ExpectedRequests& requests
+        const HFTTypes::Graph& graph, 
+        const HFTTypes::ExpectedRequests& requests
     ) = 0;
 
 protected:

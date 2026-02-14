@@ -15,12 +15,12 @@
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
-GASolver::GASolver(int max_order_profit, double max_latency, const GAConfig& ga)
+GASolver::GASolver(int max_order_profit, double max_latency, const HFTTypes::GAConfig& ga)
     : Solver{ max_order_profit, max_latency }
     , m_gen{ ga.seed }
     , m_ga{ ga } {}
 
-double GASolver::solve(const Graph& graph, const ExpectedRequests& requests) {
+double GASolver::solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) {
     std::vector<Chromosome> current_population{ build_initial_population(graph.get_num_edges()) };
     for (int i = 0; i < m_ga.generations; ++i) {
         std::vector<Chromosome> new_population = reproduce(graph, requests, current_population);
@@ -110,7 +110,9 @@ std::vector<GASolver::Chromosome> GASolver::build_initial_population(std::size_t
     return population;
 }
 
-std::vector<GASolver::Chromosome> GASolver::reproduce(const Graph& graph, const ExpectedRequests& requests, std::vector<Chromosome> population) {
+std::vector<GASolver::Chromosome> GASolver::reproduce(const HFTTypes::Graph& graph, 
+                                                      const HFTTypes::ExpectedRequests& requests, 
+                                                      std::vector<Chromosome> population) {
     std::vector<double> weights(m_ga.population_size, 0);
     std::vector<Chromosome> new_population{};
     

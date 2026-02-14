@@ -9,9 +9,9 @@
 #include "utils/object_parser.h"
 #include "utils/csv_reader.h"
 
-std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
+std::unique_ptr<HFTTypes::Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    std::unique_ptr<Graph> graph{ nullptr };
+    std::unique_ptr<HFTTypes::Graph> graph{ nullptr };
     std::size_t id{ 0 };
 
     while (csv_reader.has_next()) {
@@ -25,11 +25,11 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
             std::getline(ss, token, ',');
             int num_edges{ std::stoi(token) };
 
-            graph = std::make_unique<Graph>(num_nodes, num_edges);
+            graph = std::make_unique<HFTTypes::Graph>(num_nodes, num_edges);
             continue;
         }
 
-        Edge edge{ id };
+        HFTTypes::Edge edge{ id };
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);
 
@@ -55,14 +55,14 @@ std::unique_ptr<Graph> ObjectParser::parseGraph(const std::string& file_path) {
     return graph;
 }
 
-ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
+HFTTypes::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    ExpectedRequests requests{};
+    HFTTypes::ExpectedRequests requests{};
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        Request request{};
+        HFTTypes::Request request{};
 
         std::getline(ss, token, ',');
         request.server = std::stoi(token);
@@ -82,8 +82,8 @@ ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_pat
     return requests;
 }
 
-Config ObjectParser::parseArgs(int argc, char* argv[]) {
-    Config config{};
+HFTTypes::Config ObjectParser::parseArgs(int argc, char* argv[]) {
+    HFTTypes::Config config{};
 
     for (int i = 0; i < argc; ++i) {
         std::string arg = argv[i];

@@ -7,7 +7,7 @@
 
 class GASolverTest : public GASolver, public testing::Test {
 protected:
-    GASolverTest() : GASolver{ 100, 100, GAConfig { 
+    GASolverTest() : GASolver{ 100, 100, HFTTypes::GAConfig { 
         .population_size = 5,
         .generations = 2,
         .mutation_rate = 0.05,

@@ -12,15 +12,15 @@ SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency)
     : m_max_order_profit{ max_order_profit }
     , m_max_latency{ max_latency } {}
 
-double SelectionEvaluator::evaluate(const Graph& graph, 
-                                    const ExpectedRequests& requests,
+double SelectionEvaluator::evaluate(const HFTTypes::Graph& graph, 
+                                    const HFTTypes::ExpectedRequests& requests,
                                     const std::vector<uint64_t>& selected_edges) const {
     auto total_profit{ find_total_profit(graph, requests, selected_edges) };
     return total_profit;
 }
 
-double SelectionEvaluator::find_total_profit(const Graph& graph, 
-                                             const ExpectedRequests& requests, 
+double SelectionEvaluator::find_total_profit(const HFTTypes::Graph& graph, 
+                                             const HFTTypes::ExpectedRequests& requests, 
                                              const std::vector<uint64_t>& selected_edges) const {
     std::size_t num_edges{ graph.get_num_edges() };
     std::vector<int> path_flow(num_edges, 0);
@@ -57,8 +57,8 @@ double SelectionEvaluator::find_total_profit(const Graph& graph,
     return total_profit;
 }
 
-int SelectionEvaluator::get_processed_orders(const Graph& graph, 
-                                             const Request& request, 
+int SelectionEvaluator::get_processed_orders(const HFTTypes::Graph& graph, 
+                                             const HFTTypes::Request& request, 
                                              const std::vector<uint64_t>& selected_edges, 
                                              std::vector<int>& path_flow,
                                              int remaining_orders) const {
@@ -75,7 +75,7 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
     std::size_t num_nodes{ graph.get_num_nodes() };
 
     std::vector<double> min_latency_buffer(num_nodes, std::numeric_limits<double>::max());
-    std::vector<const Edge*> parent_edge_buffer(num_nodes, nullptr);
+    std::vector<const HFTTypes::Edge*> parent_edge_buffer(num_nodes, nullptr);
 
     min_latency_buffer[request.server] = 0;
     pq.push({0, request.server});
@@ -97,7 +97,7 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
                 continue;
             }
 
-            const Edge& edge = graph.get_edge(edge_index);
+            const HFTTypes::Edge& edge = graph.get_edge(edge_index);
             int current_flow = path_flow[edge_index];
             
             if (current_flow == edge.rate_limit * request.planning_horizon) {
@@ -116,11 +116,11 @@ int SelectionEvaluator::get_processed_orders(const Graph& graph,
     return 0;
 }
 
-int SelectionEvaluator::process_orders(const Request& request, 
-                                       std::vector<const Edge*>& parent_edge_buffer,
+int SelectionEvaluator::process_orders(const HFTTypes::Request& request, 
+                                       std::vector<const HFTTypes::Edge*>& parent_edge_buffer,
                                        std::vector<int>& path_flow, 
                                        int remaining_orders) const {
-    const Edge* cur_edge{ parent_edge_buffer[request.exchange] };
+    const HFTTypes::Edge* cur_edge{ parent_edge_buffer[request.exchange] };
     int min_rate_limit{ cur_edge->rate_limit };
 
     while (cur_edge) {
