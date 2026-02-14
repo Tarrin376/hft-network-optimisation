@@ -23,9 +23,10 @@ void HFTTypes::Graph::add_edge(const Edge& edge, bool source_is_server) {
 
     src.id = edge.source;
     src.is_server = source_is_server;
-    src.edges.push_back(edge.id);
+    src.outgoing_edges.push_back(edge.id);
 
     dst.id = edge.dest;
+    dst.incoming_edges.push_back(edge.id);
 }
 
 const HFTTypes::Edge& HFTTypes::Graph::get_edge(std::size_t edge_id) const {
@@ -36,11 +37,6 @@ const HFTTypes::Edge& HFTTypes::Graph::get_edge(std::size_t edge_id) const {
 const HFTTypes::Node& HFTTypes::Graph::get_node(std::size_t node_id) const {
     assert(node_id < m_num_nodes);
     return m_nodes[node_id];
-}
-
-const std::vector<std::size_t>& HFTTypes::Graph::outgoing(std::size_t node_id) const {
-    assert(node_id < m_num_nodes);
-    return m_nodes[node_id].edges;
 }
 
 std::size_t HFTTypes::Graph::get_num_nodes() const {

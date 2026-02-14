@@ -31,7 +31,7 @@ private:
                        std::vector<int>& path_flow,
                        int remaining_orders) const;
 
-    bool edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) const;
+    bool edge_is_selected(std::size_t edge_index, const std::vector<uint64_t>& selected_edges) const;
 
     const int m_max_order_profit{};
     const double m_max_latency{};

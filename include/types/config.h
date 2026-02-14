@@ -4,6 +4,7 @@
 #include <string>
 
 #include "types/ga_config.h"
+#include "types/milp_config.h"
 
 namespace HFTTypes {
     struct Config {
@@ -15,6 +16,7 @@ namespace HFTTypes {
         double max_latency{};
 
         GAConfig ga{};
+        MILPConfig milp{};
     };
 }
 

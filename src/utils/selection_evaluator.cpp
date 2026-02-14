@@ -40,7 +40,7 @@ double SelectionEvaluator::find_total_profit(const HFTTypes::Graph& graph,
         for (int i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = graph.get_edge(i);
-                double gross_profit = m_max_order_profit * (1 - edge.latency / m_max_latency);
+                double gross_profit = m_max_order_profit * (1.0 - edge.latency / m_max_latency);
                 total_profit += gross_profit * path_flow[i];
             }
         }
@@ -92,12 +92,13 @@ int SelectionEvaluator::get_processed_orders(const HFTTypes::Graph& graph,
             continue;
         }
 
-        for (const auto& edge_index : graph.get_node(current.node_id).edges) {
+        const auto& node = graph.get_node(current.node_id);
+        for (const auto& edge_index : node.outgoing_edges) {
             if (!edge_is_selected(edge_index, selected_edges)) {
                 continue;
             }
 
-            const HFTTypes::Edge& edge = graph.get_edge(edge_index);
+            const auto& edge = graph.get_edge(edge_index);
             int current_flow = path_flow[edge_index];
             
             if (current_flow == edge.rate_limit * request.planning_horizon) {
@@ -139,6 +140,6 @@ int SelectionEvaluator::process_orders(const HFTTypes::Request& request,
     return processed_orders;
 }
 
-bool SelectionEvaluator::edge_is_selected(int edge_index, const std::vector<uint64_t>& selected_edges) const {
+bool SelectionEvaluator::edge_is_selected(std::size_t edge_index, const std::vector<uint64_t>& selected_edges) const {
     return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
 }

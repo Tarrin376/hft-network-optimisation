@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <random>
 
+#include "utils/selection_evaluator.h"
+
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
@@ -16,7 +18,7 @@ class GASolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
     
-    GASolver(int max_order_profit, double max_latency, const HFTTypes::GAConfig& ga);
+    GASolver(int max_order_profit, double max_latency, const HFTTypes::GAConfig& config);
 
     double solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests);
 
@@ -29,7 +31,7 @@ protected:
     void mutate(Chromosome& offspring);
 
     std::mt19937 m_gen{};
-    HFTTypes::GAConfig m_ga{};
+    HFTTypes::GAConfig m_config{};
 
 private:
     std::vector<Chromosome> build_initial_population(std::size_t num_edges);
@@ -37,8 +39,9 @@ private:
     std::vector<Chromosome> reproduce(const HFTTypes::Graph& graph, 
                                       const HFTTypes::ExpectedRequests& requests, 
                                       std::vector<Chromosome> population);
-
-    double m_max_profit{};
+    
+    const SelectionEvaluator m_selection_evaluator;
+    double m_best_profit_achieved{};
 };
 
 #endif

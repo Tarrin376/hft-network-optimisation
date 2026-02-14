@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 
+#include "utils/selection_evaluator.h"
+
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
@@ -20,6 +22,8 @@ private:
                      const HFTTypes::ExpectedRequests& requests, 
                      std::vector<uint64_t>& selected_edges, 
                      std::size_t index);
+    
+    const SelectionEvaluator m_selection_evaluator;
 };
 
 #endif

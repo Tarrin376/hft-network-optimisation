@@ -17,7 +17,8 @@ namespace HFTTypes {
     struct Node {
         std::size_t id{};
         bool is_server{};
-        std::vector<std::size_t> edges{};
+        std::vector<std::size_t> outgoing_edges{};
+        std::vector<std::size_t> incoming_edges{};
     };
 
     class Graph {
@@ -28,8 +29,6 @@ namespace HFTTypes {
 
         const Edge& get_edge(std::size_t edge_id) const;
         const Node& get_node(std::size_t node_id) const;
-
-        const std::vector<std::size_t>& outgoing(std::size_t node_id) const;
 
         std::size_t get_num_nodes() const;
         std::size_t get_num_edges() const;

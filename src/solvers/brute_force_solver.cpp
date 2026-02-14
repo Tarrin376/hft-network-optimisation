@@ -8,7 +8,8 @@
 #include "types/graph.h"
 
 BruteForceSolver::BruteForceSolver(int max_order_profit, double max_latency) 
-: Solver{ max_order_profit, max_latency } {}
+    : Solver{ max_order_profit, max_latency }
+    , m_selection_evaluator{ max_order_profit, max_latency } {}
 
 double BruteForceSolver::solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) {
     std::vector<uint64_t> selected_edges(graph.get_num_edges(), 0);

@@ -15,19 +15,20 @@
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
-GASolver::GASolver(int max_order_profit, double max_latency, const HFTTypes::GAConfig& ga)
+GASolver::GASolver(int max_order_profit, double max_latency, const HFTTypes::GAConfig& config)
     : Solver{ max_order_profit, max_latency }
-    , m_gen{ ga.seed }
-    , m_ga{ ga } {}
+    , m_selection_evaluator{ max_order_profit, max_latency }
+    , m_gen{ config.seed }
+    , m_config{ config } {}
 
 double GASolver::solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) {
     std::vector<Chromosome> current_population{ build_initial_population(graph.get_num_edges()) };
-    for (int i = 0; i < m_ga.generations; ++i) {
+    for (int i = 0; i < m_config.generations; ++i) {
         std::vector<Chromosome> new_population = reproduce(graph, requests, current_population);
         current_population = new_population;
     }
 
-    return m_max_profit;
+    return m_best_profit_achieved;
 }
 
 double GASolver::get_random_double(double min, double max) {
@@ -36,16 +37,16 @@ double GASolver::get_random_double(double min, double max) {
 }
 
 std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& weights) {
-    std::vector<std::size_t> selected_parents(m_ga.population_size, 0);
+    std::vector<std::size_t> selected_parents(m_config.population_size, 0);
     double total{ std::accumulate(weights.begin(), weights.end(), 0.0) };
 
-    const double step{ total / static_cast<double>(m_ga.population_size) };
+    const double step{ total / static_cast<double>(m_config.population_size) };
     double cumulative{ weights[0] };
 
     double pointer{ get_random_double(0.0, step) };
     std::size_t idx{ 0 };
 
-    for (std::size_t i = 0; i < m_ga.population_size; ++i) {
+    for (std::size_t i = 0; i < m_config.population_size; ++i) {
         while (pointer > cumulative) {
             ++idx;
             cumulative += weights[idx];
@@ -78,7 +79,7 @@ void GASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx
 void GASolver::mutate(Chromosome& offspring) {
     for (std::size_t i = 0; i < offspring.size(); ++i) {
         for (int j = 0; j < 64; ++j) {
-            if (get_random_double(0.0, 1.0) < m_ga.mutation_rate) {
+            if (get_random_double(0.0, 1.0) < m_config.mutation_rate) {
                 offspring[i] ^= (1ULL << j);
             }
         }
@@ -87,13 +88,13 @@ void GASolver::mutate(Chromosome& offspring) {
 
 std::vector<GASolver::Chromosome> GASolver::build_initial_population(std::size_t num_edges) {
     std::vector<Chromosome> population(
-        m_ga.population_size,
+        m_config.population_size,
         Chromosome(num_edges / 64 + 1, ~0ULL)
     );
 
     for (std::size_t i = 1; i < population.size(); ++i) {
         for (std::size_t j = 0; j < num_edges; ++j) {
-            if (get_random_double(0.0, 1.0) < m_ga.initial_bit_flip_rate) {
+            if (get_random_double(0.0, 1.0) < m_config.initial_bit_flip_rate) {
                 population[i][j / 64] ^= (1ULL << (j % 64));
             }
         }
@@ -113,22 +114,22 @@ std::vector<GASolver::Chromosome> GASolver::build_initial_population(std::size_t
 std::vector<GASolver::Chromosome> GASolver::reproduce(const HFTTypes::Graph& graph, 
                                                       const HFTTypes::ExpectedRequests& requests, 
                                                       std::vector<Chromosome> population) {
-    std::vector<double> weights(m_ga.population_size, 0);
+    std::vector<double> weights(m_config.population_size, 0);
     std::vector<Chromosome> new_population{};
     
-    for (std::size_t i = 0; i < m_ga.population_size; ++i) {
+    for (std::size_t i = 0; i < m_config.population_size; ++i) {
         double profit = m_selection_evaluator.evaluate(graph, requests, population[i]);
-        m_max_profit = std::max(m_max_profit, profit);
+        m_best_profit_achieved = std::max(m_best_profit_achieved, profit);
         weights[i] = std::max(profit, 0.0);
     }
 
     std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(weights) };
 
-    for (std::size_t i = 0; i < m_ga.population_size - 1; i += 2) {
+    for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
         auto& parent1 = population[selected_parents[i]];
         auto& parent2 = population[selected_parents[i + 1]];
         
-        if (get_random_double(0.0, 1.0) < m_ga.crossover_rate) {
+        if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
             std::uniform_int_distribution<int> point_dist(0, static_cast<int>(graph.get_num_edges()) - 1);
             int start{ point_dist(m_gen) };
             int end{ point_dist(m_gen) };
