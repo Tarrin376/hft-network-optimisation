@@ -42,8 +42,8 @@ double SelectionEvaluator::find_total_profit(const HFTTypes::Graph& graph,
         for (int i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = graph.get_edge(i);
-                double edge_cost = path_flow[i] * m_max_order_profit * (edge.latency / m_max_latency);
-                request_profit -= edge_cost;
+                double penalty = path_flow[i] * m_max_order_profit * (edge.latency / m_max_latency);
+                request_profit -= penalty;
             }
         }
 
