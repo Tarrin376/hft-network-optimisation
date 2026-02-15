@@ -2,6 +2,7 @@
 #include <vector>
 #include <queue>
 #include <limits>
+#include <iostream>
 
 #include "utils/selection_evaluator.h"
 
@@ -37,15 +38,17 @@ double SelectionEvaluator::find_total_profit(const HFTTypes::Graph& graph,
             remaining_orders -= processed_orders;
         }
 
+        double request_profit = m_max_order_profit * request.num_orders;
         for (int i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = graph.get_edge(i);
-                double gross_profit = m_max_order_profit * (1.0 - edge.latency / m_max_latency);
-                total_profit += gross_profit * path_flow[i];
+                double edge_cost = path_flow[i] * m_max_order_profit * (edge.latency / m_max_latency);
+                request_profit -= edge_cost;
             }
         }
 
         path_flow.assign(num_edges, 0);
+        total_profit += request_profit;
     }
 
     for (std::size_t i = 0; i < num_edges; ++i) {
