@@ -9,8 +9,8 @@ public:
     virtual ~Solver() = default;
 
     virtual double solve(
-        const HFTTypes::Graph& graph, 
-        const HFTTypes::ExpectedRequests& requests
+        const HFT::Graph& graph, 
+        const HFT::ExpectedRequests& requests
     ) = 0;
 
 protected:

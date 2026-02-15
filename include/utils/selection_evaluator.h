@@ -11,23 +11,23 @@ class SelectionEvaluator {
 public:
     SelectionEvaluator(int max_order_profit, double max_latency);
 
-    double evaluate(const HFTTypes::Graph& graph, 
-                    const HFTTypes::ExpectedRequests& requests, 
+    double evaluate(const HFT::Graph& graph, 
+                    const HFT::ExpectedRequests& requests, 
                     const std::vector<uint64_t>& selected_edges) const;
 
 private:
-    double find_total_profit(const HFTTypes::Graph& graph, 
-                             const HFTTypes::ExpectedRequests& requests, 
+    double find_total_profit(const HFT::Graph& graph, 
+                             const HFT::ExpectedRequests& requests, 
                              const std::vector<uint64_t>& selected_edges) const;
 
-    int get_processed_orders(const HFTTypes::Graph& graph, 
-                             const HFTTypes::Request& request, 
+    int get_processed_orders(const HFT::Graph& graph, 
+                             const HFT::Request& request, 
                              const std::vector<uint64_t>& selected_edges,
                              std::vector<int>& path_flow,
                              int remaining_orders) const;
 
-    int process_orders(const HFTTypes::Request& request, 
-                       std::vector<const HFTTypes::Edge*>& parent_edge_buffer,
+    int process_orders(const HFT::Request& request, 
+                       std::vector<const HFT::Edge*>& parent_edge_buffer,
                        std::vector<int>& path_flow,
                        int remaining_orders) const;
 

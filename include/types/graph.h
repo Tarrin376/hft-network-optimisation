@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace HFTTypes {
+namespace HFT {
     struct Edge {
         std::size_t id{};
         std::size_t source{};

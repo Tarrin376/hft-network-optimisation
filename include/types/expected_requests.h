@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace HFTTypes {
+namespace HFT {
     struct Request {
         std::size_t server{};
         std::size_t exchange{};

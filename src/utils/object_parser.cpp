@@ -9,9 +9,9 @@
 #include "utils/object_parser.h"
 #include "utils/csv_reader.h"
 
-std::unique_ptr<HFTTypes::Graph> ObjectParser::parseGraph(const std::string& file_path) {
+std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    std::unique_ptr<HFTTypes::Graph> graph{ nullptr };
+    std::unique_ptr<HFT::Graph> graph{ nullptr };
     std::size_t id{ 0 };
 
     while (csv_reader.has_next()) {
@@ -25,11 +25,11 @@ std::unique_ptr<HFTTypes::Graph> ObjectParser::parseGraph(const std::string& fil
             std::getline(ss, token, ',');
             int num_edges{ std::stoi(token) };
 
-            graph = std::make_unique<HFTTypes::Graph>(num_nodes, num_edges);
+            graph = std::make_unique<HFT::Graph>(num_nodes, num_edges);
             continue;
         }
 
-        HFTTypes::Edge edge{ id };
+        HFT::Edge edge{ id };
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);
 
@@ -55,14 +55,14 @@ std::unique_ptr<HFTTypes::Graph> ObjectParser::parseGraph(const std::string& fil
     return graph;
 }
 
-HFTTypes::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
+HFT::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
-    HFTTypes::ExpectedRequests requests{};
+    HFT::ExpectedRequests requests{};
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        HFTTypes::Request request{};
+        HFT::Request request{};
 
         std::getline(ss, token, ',');
         request.server = std::stoi(token);
@@ -82,8 +82,8 @@ HFTTypes::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string
     return requests;
 }
 
-HFTTypes::Config ObjectParser::parseArgs(int argc, char* argv[]) {
-    HFTTypes::Config config{};
+HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
+    HFT::Config config{};
 
     for (int i = 0; i < argc; ++i) {
         std::string arg = argv[i];

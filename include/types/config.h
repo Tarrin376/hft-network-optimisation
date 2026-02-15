@@ -6,7 +6,7 @@
 #include "types/ga_config.h"
 #include "types/milp_config.h"
 
-namespace HFTTypes {
+namespace HFT {
     struct Config {
         std::string graph_file_path{};
         std::string expected_requests_path{};

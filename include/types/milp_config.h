@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace HFTTypes {
+namespace HFT {
     struct MILPConfig {
         std::string solver_id{};
     };

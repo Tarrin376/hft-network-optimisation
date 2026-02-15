@@ -1,7 +1,7 @@
 #ifndef GA_CONFIG_H
 #define GA_CONFIG_H
 
-namespace HFTTypes {
+namespace HFT {
     struct GAConfig {
         int population_size = 200;
         int generations = 500;

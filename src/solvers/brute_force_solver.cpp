@@ -11,14 +11,14 @@ BruteForceSolver::BruteForceSolver(int max_order_profit, double max_latency)
     : Solver{ max_order_profit, max_latency }
     , m_selection_evaluator{ max_order_profit, max_latency } {}
 
-double BruteForceSolver::solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) {
+double BruteForceSolver::solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) {
     std::vector<uint64_t> selected_edges(graph.get_num_edges(), 0);
     auto total_profit{ backtrack(graph, requests, selected_edges, 0) };
     return total_profit;
 }
 
-double BruteForceSolver::backtrack(const HFTTypes::Graph& graph,
-                                   const HFTTypes::ExpectedRequests& requests, 
+double BruteForceSolver::backtrack(const HFT::Graph& graph,
+                                   const HFT::ExpectedRequests& requests, 
                                    std::vector<uint64_t>& selected_edges, 
                                    std::size_t index) {
     if (index == graph.get_num_edges()) {

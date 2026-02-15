@@ -15,11 +15,11 @@ class BruteForceSolver : public Solver {
 public:
     BruteForceSolver(int max_order_profit, double max_latency);
 
-    double solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) override;
+    double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) override;
 
 private:
-    double backtrack(const HFTTypes::Graph& graph, 
-                     const HFTTypes::ExpectedRequests& requests, 
+    double backtrack(const HFT::Graph& graph, 
+                     const HFT::ExpectedRequests& requests, 
                      std::vector<uint64_t>& selected_edges, 
                      std::size_t index);
     

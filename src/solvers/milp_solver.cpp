@@ -18,7 +18,7 @@
 #include "solvers/milp_solver.h"
 #include "solvers/solver.h"
 
-MILPSolver::MILPSolver(int max_order_profit, double max_latency, const HFTTypes::MILPConfig& config) 
+MILPSolver::MILPSolver(int max_order_profit, double max_latency, const HFT::MILPConfig& config) 
 : Solver{ max_order_profit, max_latency }
 , m_config{ config } {
     set_solver(config.solver_id);
@@ -35,8 +35,8 @@ void MILPSolver::set_solver(const std::string& solver_id) {
     m_config.solver_id = solver_id;
 }
 
-std::vector<or_tools::MPVariable*> MILPSolver::build_edge_variables(const HFTTypes::Graph& graph, 
-                                                                    const HFTTypes::ExpectedRequests& requests) {
+std::vector<or_tools::MPVariable*> MILPSolver::build_edge_variables(const HFT::Graph& graph, 
+                                                                    const HFT::ExpectedRequests& requests) {
     std::vector<or_tools::MPVariable*> edge_vars{};
     for (std::size_t i = 0; i < graph.get_num_edges(); ++i) {
         std::string edge_label = "y" + std::to_string(i);
@@ -46,8 +46,8 @@ std::vector<or_tools::MPVariable*> MILPSolver::build_edge_variables(const HFTTyp
     return edge_vars;
 }
 
-std::vector<or_tools::MPVariable*> MILPSolver::build_flow_variables(const HFTTypes::Graph& graph, 
-                                                                    const HFTTypes::ExpectedRequests& requests) {
+std::vector<or_tools::MPVariable*> MILPSolver::build_flow_variables(const HFT::Graph& graph, 
+                                                                    const HFT::ExpectedRequests& requests) {
     std::vector<or_tools::MPVariable*> flow_vars{};
     for (size_t i = 0; i < requests.size(); ++i) {
         for (size_t a = 0; a < graph.get_num_edges(); ++a) {
@@ -59,8 +59,8 @@ std::vector<or_tools::MPVariable*> MILPSolver::build_flow_variables(const HFTTyp
     return flow_vars;
 }
 
-void MILPSolver::apply_flow_conservation_constraints(const HFTTypes::Graph& graph, 
-                                                     const HFTTypes::ExpectedRequests& requests,
+void MILPSolver::apply_flow_conservation_constraints(const HFT::Graph& graph, 
+                                                     const HFT::ExpectedRequests& requests,
                                                      const std::vector<or_tools::MPVariable*> flow_vars) {
     for (size_t i = 0; i < requests.size(); ++i) {
         const auto& req = requests[i];
@@ -86,14 +86,13 @@ void MILPSolver::apply_flow_conservation_constraints(const HFTTypes::Graph& grap
     }
 }
 
-void MILPSolver::apply_capacity_constraints(const HFTTypes::Graph& graph, 
-                                            const HFTTypes::ExpectedRequests& requests,
+void MILPSolver::apply_capacity_constraints(const HFT::Graph& graph, 
+                                            const HFT::ExpectedRequests& requests,
                                             const std::vector<or_tools::MPVariable*> flow_vars,
                                             const std::vector<or_tools::MPVariable*> edge_vars) {
     for (size_t i = 0; i < requests.size(); ++i) {
         for (size_t a = 0; a < graph.get_num_edges(); ++a) {
             or_tools::MPConstraint* const cap_con = m_solver->MakeRowConstraint(-or_tools::MPSolver::infinity(), 0.0);
-            
             double capacity_coeff = graph.get_edge(a).rate_limit * requests[i].planning_horizon;
             
             cap_con->SetCoefficient(flow_vars[i * graph.get_num_edges() + a], 1.0);
@@ -102,8 +101,8 @@ void MILPSolver::apply_capacity_constraints(const HFTTypes::Graph& graph,
     }
 }
 
-or_tools::MPObjective* const MILPSolver::build_objective_function(const HFTTypes::Graph& graph, 
-                                                                  const HFTTypes::ExpectedRequests& requests,
+or_tools::MPObjective* const MILPSolver::build_objective_function(const HFT::Graph& graph, 
+                                                                  const HFT::ExpectedRequests& requests,
                                                                   const std::vector<or_tools::MPVariable*> flow_vars,
                                                                   const std::vector<or_tools::MPVariable*> edge_vars) {
     or_tools::MPObjective* const objective = m_solver->MutableObjective();
@@ -127,7 +126,7 @@ or_tools::MPObjective* const MILPSolver::build_objective_function(const HFTTypes
     return objective;
 }
 
-double MILPSolver::solve(const HFTTypes::Graph& graph, const HFTTypes::ExpectedRequests& requests) {
+double MILPSolver::solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) {
     if (!m_solver) {
         LOG(ERROR) << "No solver has been set. Please set the solver and try again.";
     }
