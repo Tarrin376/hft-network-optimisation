@@ -76,6 +76,9 @@ HFT::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& fil
         std::getline(ss, token, ',');
         request.planning_horizon = std::stoi(token);
 
+        std::getline(ss, token, ',');
+        request.max_order_profit = std::stoi(token);
+
         requests.push_back(request);
     }
 
@@ -94,8 +97,6 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
             config.expected_requests_path = argv[++i];
         } else if (arg == "--algorithm" || arg == "-a") {
             config.algorithm = argv[++i];
-        } else if (arg == "--maxprofit" || arg == "-p") {
-            config.max_order_profit = std::stoi(argv[++i]);
         } else if (arg == "--maxlatency" || arg == "-l") {
             config.max_latency = std::stod(argv[++i]); 
         } else if (arg == "--population") {

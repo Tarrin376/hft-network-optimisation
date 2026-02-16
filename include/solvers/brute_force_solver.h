@@ -13,7 +13,7 @@
 
 class BruteForceSolver : public Solver {
 public:
-    BruteForceSolver(int max_order_profit, double max_latency);
+    BruteForceSolver(double max_latency);
 
     double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) override;
 

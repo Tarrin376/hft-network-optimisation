@@ -17,7 +17,7 @@ namespace or_tools = operations_research;
 
 class MILPSolver : public Solver {
 public:
-    MILPSolver(int max_order_profit, double max_latency, const HFT::MILPConfig& config);
+    MILPSolver(double max_latency, const HFT::MILPConfig& config);
 
     double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests);
 

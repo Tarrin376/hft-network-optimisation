@@ -9,7 +9,7 @@
 
 class SelectionEvaluator {
 public:
-    SelectionEvaluator(int max_order_profit, double max_latency);
+    SelectionEvaluator(double max_latency);
 
     double evaluate(const HFT::Graph& graph, 
                     const HFT::ExpectedRequests& requests, 
@@ -33,7 +33,6 @@ private:
 
     bool edge_is_selected(std::size_t edge_index, const std::vector<uint64_t>& selected_edges) const;
 
-    const int m_max_order_profit{};
     const double m_max_latency{};
 };
 

@@ -18,7 +18,7 @@ class GASolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
     
-    GASolver(int max_order_profit, double max_latency, const HFT::GAConfig& config);
+    GASolver(double max_latency, const HFT::GAConfig& config);
 
     double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests);
 
@@ -30,9 +30,6 @@ protected:
     void crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx);
     void mutate(Chromosome& offspring);
 
-    std::mt19937 m_gen{};
-    HFT::GAConfig m_config{};
-
 private:
     std::vector<Chromosome> build_initial_population(std::size_t num_edges);
     
@@ -42,6 +39,9 @@ private:
     
     const SelectionEvaluator m_selection_evaluator;
     double m_best_profit_achieved{};
+
+    std::mt19937 m_gen{};
+    HFT::GAConfig m_config{};
 };
 
 #endif

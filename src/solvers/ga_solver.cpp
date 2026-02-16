@@ -15,9 +15,9 @@
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
-GASolver::GASolver(int max_order_profit, double max_latency, const HFT::GAConfig& config)
-    : Solver{ max_order_profit, max_latency }
-    , m_selection_evaluator{ max_order_profit, max_latency }
+GASolver::GASolver(double max_latency, const HFT::GAConfig& config)
+    : Solver{ max_latency }
+    , m_selection_evaluator{ max_latency }
     , m_gen{ config.seed }
     , m_config{ config } {}
 

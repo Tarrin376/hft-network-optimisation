@@ -9,9 +9,7 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-SelectionEvaluator::SelectionEvaluator(int max_order_profit, double max_latency) 
-    : m_max_order_profit{ max_order_profit }
-    , m_max_latency{ max_latency } {}
+SelectionEvaluator::SelectionEvaluator(double max_latency) : m_max_latency{ max_latency } {}
 
 double SelectionEvaluator::evaluate(const HFT::Graph& graph, 
                                     const HFT::ExpectedRequests& requests,
@@ -38,11 +36,11 @@ double SelectionEvaluator::find_total_profit(const HFT::Graph& graph,
             remaining_orders -= processed_orders;
         }
 
-        double request_profit = m_max_order_profit * request.num_orders;
+        double request_profit = request.max_order_profit * request.num_orders;
         for (int i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = graph.get_edge(i);
-                double penalty = path_flow[i] * m_max_order_profit * (edge.latency / m_max_latency);
+                double penalty = path_flow[i] * request.max_order_profit * (edge.latency / m_max_latency);
                 request_profit -= penalty;
             }
         }

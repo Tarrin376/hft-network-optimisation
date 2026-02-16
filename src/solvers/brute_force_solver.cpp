@@ -7,9 +7,9 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-BruteForceSolver::BruteForceSolver(int max_order_profit, double max_latency) 
-    : Solver{ max_order_profit, max_latency }
-    , m_selection_evaluator{ max_order_profit, max_latency } {}
+BruteForceSolver::BruteForceSolver(double max_latency) 
+    : Solver{ max_latency }
+    , m_selection_evaluator{ max_latency } {}
 
 double BruteForceSolver::solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) {
     std::vector<uint64_t> selected_edges(graph.get_num_edges(), 0);

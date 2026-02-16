@@ -9,7 +9,7 @@
 
 class BruteForceSolverTest : public testing::Test {
 protected:
-    BruteForceSolverTest() : m_brute_force_solver{ 360, 100 } {}
+    BruteForceSolverTest() : m_brute_force_solver{ 100 } {}
 
     BruteForceSolver m_brute_force_solver;
 };
@@ -30,7 +30,13 @@ TEST_F(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
     graph.add_edge({ .id = 11, .source = 2, .dest = 3, .rate_limit = 2, .latency = 15, .lease_cost = 32 }, false);
 
     HFT::ExpectedRequests expected_requests{};
-    expected_requests.push_back({ .server = 0, .exchange = 3, .num_orders = 3, .planning_horizon = 1 });
+    expected_requests.push_back({ 
+        .server = 0, 
+        .exchange = 3, 
+        .num_orders = 3, 
+        .planning_horizon = 1, 
+        .max_order_profit = 360 
+    });
 
     double total_profit{ m_brute_force_solver.solve(graph, expected_requests) };
     EXPECT_FLOAT_EQ(total_profit, 24);
@@ -41,7 +47,13 @@ TEST_F(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
     graph.add_edge({ .id = 0, .source = 0, .dest = 1, .rate_limit = 9, .latency = 75, .lease_cost = 170 }, true);
 
     HFT::ExpectedRequests expected_requests{};
-    expected_requests.push_back({ .server = 0, .exchange = 1, .num_orders = 10, .planning_horizon = 1 });
+    expected_requests.push_back({ 
+        .server = 0, 
+        .exchange = 1, 
+        .num_orders = 10, 
+        .planning_horizon = 1, 
+        .max_order_profit = 360 
+    });
 
     double total_profit{ m_brute_force_solver.solve(graph, expected_requests) };
     EXPECT_FLOAT_EQ(total_profit, -(std::numeric_limits<double>::infinity()));

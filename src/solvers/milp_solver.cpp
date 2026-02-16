@@ -18,8 +18,8 @@
 #include "solvers/milp_solver.h"
 #include "solvers/solver.h"
 
-MILPSolver::MILPSolver(int max_order_profit, double max_latency, const HFT::MILPConfig& config) 
-: Solver{ max_order_profit, max_latency }
+MILPSolver::MILPSolver(double max_latency, const HFT::MILPConfig& config) 
+: Solver{ max_latency }
 , m_config{ config } {
     set_solver(config.solver_id);
 }
@@ -110,8 +110,8 @@ or_tools::MPObjective* const MILPSolver::build_objective_function(const HFT::Gra
     // Latency Penalty Term
     for (size_t i = 0; i < requests.size(); ++i) {
         for (size_t a = 0; a < graph.get_num_edges(); ++a) {
-            double latency = graph.get_edge(a).latency;
-            double penalty = -1.0 * (m_max_order_profit * (latency / m_max_latency));
+            double edge_latency = graph.get_edge(a).latency;
+            double penalty = -1.0 * (requests[i].max_order_profit * (edge_latency / m_max_latency));
             objective->SetCoefficient(flow_vars[i * graph.get_num_edges() + a], penalty);
         }
     }
@@ -158,7 +158,7 @@ double MILPSolver::solve(const HFT::Graph& graph, const HFT::ExpectedRequests& r
 
     double total_profit = objective->Value();
     for (const auto& request : requests) {
-        total_profit += m_max_order_profit * request.num_orders;
+        total_profit += request.max_order_profit * request.num_orders;
     }
 
     return total_profit;

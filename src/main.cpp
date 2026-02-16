@@ -15,11 +15,11 @@
 
 std::unique_ptr<Solver> determineSolver(const HFT::Config& config) {
     if (config.algorithm == "brute_force") {
-        return std::make_unique<BruteForceSolver>(config.max_order_profit, config.max_latency);
+        return std::make_unique<BruteForceSolver>(config.max_latency);
     } else if (config.algorithm == "genetic") {
-        return std::make_unique<GASolver>(config.max_order_profit, config.max_latency, config.ga);
+        return std::make_unique<GASolver>(config.max_latency, config.ga);
     } else if (config.algorithm == "milp") {
-        return std::make_unique<MILPSolver>(config.max_order_profit, config.max_latency, config.milp);
+        return std::make_unique<MILPSolver>(config.max_latency, config.milp);
     } else {
         return nullptr;
     }
