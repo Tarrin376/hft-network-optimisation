@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <random>
 #include <numeric>
+#include <mutex>
 
 #include "utils/bit_utils.h"
 
@@ -92,7 +93,8 @@ std::vector<GASolver::Chromosome> GASolver::build_initial_population(std::size_t
         Chromosome(num_edges / 64 + 1, ~0ULL)
     );
 
-    for (std::size_t i = 1; i < population.size(); ++i) {
+    #pragma omp parallel
+    for (std::size_t i = 1; i < m_config.population_size; ++i) {
         for (std::size_t j = 0; j < num_edges; ++j) {
             if (get_random_double(0.0, 1.0) < m_config.initial_bit_flip_rate) {
                 population[i][j / 64] ^= (1ULL << (j % 64));
@@ -116,15 +118,18 @@ std::vector<GASolver::Chromosome> GASolver::reproduce(const HFT::Graph& graph,
                                                       std::vector<Chromosome> population) {
     std::vector<double> weights(m_config.population_size, 0);
     std::vector<Chromosome> new_population{};
+    std::mutex new_population_mutex{};
     
+    #pragma omp parallel for reduction(max:m_best_profit_achieved)
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
-        double profit = m_selection_evaluator.evaluate(graph, requests, population[i]);
-        m_best_profit_achieved = std::max(m_best_profit_achieved, profit);
-        weights[i] = std::max(profit, 0.0);
+        double fitness = m_selection_evaluator.evaluate(graph, requests, population[i]);
+        m_best_profit_achieved = std::max(m_best_profit_achieved, fitness);
+        weights[i] = std::max(fitness, 0.0);
     }
 
     std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(weights) };
 
+    #pragma omp parallel for
     for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
         auto& parent1 = population[selected_parents[i]];
         auto& parent2 = population[selected_parents[i + 1]];
@@ -139,8 +144,12 @@ std::vector<GASolver::Chromosome> GASolver::reproduce(const HFT::Graph& graph,
         mutate(parent1);
         mutate(parent2);
 
+        new_population_mutex.lock();
+
         new_population.push_back(parent1);
         new_population.push_back(parent2);
+
+        new_population_mutex.unlock();
     }
 
     return new_population;
