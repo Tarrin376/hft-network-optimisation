@@ -13,7 +13,7 @@
 #include "solvers/ga_solver.h"
 #include "solvers/milp_solver.h"
 
-std::unique_ptr<Solver> determineSolver(const HFT::Config& config) {
+std::unique_ptr<Solver> determine_solver(const HFT::Config& config) {
     if (config.algorithm == "brute_force") {
         return std::make_unique<BruteForceSolver>(config.max_latency);
     } else if (config.algorithm == "genetic") {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::unique_ptr<Solver> solver{ determineSolver(config) };
+    std::unique_ptr<Solver> solver{ determine_solver(config) };
     if (!solver) {
         std::cout << "Failed to determine solver '" << config.algorithm << "'\n";
         return 1;
