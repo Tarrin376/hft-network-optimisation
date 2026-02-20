@@ -16,10 +16,11 @@
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
+std::mt19937 GASolver::m_gen{ GASolver::seed };
+
 GASolver::GASolver(double max_latency, const HFT::GAConfig& config)
     : Solver{ max_latency }
     , m_selection_evaluator{ max_latency }
-    , m_gen{ config.seed }
     , m_config{ config } {}
 
 double GASolver::solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) {

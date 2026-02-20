@@ -109,8 +109,6 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
             config.ga.crossover_rate = std::stod(argv[++i]);
         } else if (arg == "--initial-bit-flip-rate") {
             config.ga.initial_bit_flip_rate = std::stod(argv[++i]);
-        } else if (arg == "--seed") {
-            config.ga.seed = static_cast<unsigned>(std::stoul(argv[++i]));
         } else if (arg == "--solver-id") {
             config.milp.solver_id = argv[++i];
         }

@@ -13,7 +13,6 @@ protected:
         .mutation_rate = 0.05,
         .crossover_rate = 0.8,
         .initial_bit_flip_rate = 0.01,
-        .seed = 34,
     } } {}
 
     double get_random_double(double min, double max) override {
