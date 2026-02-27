@@ -39,10 +39,9 @@ private:
     
     const SelectionEvaluator m_selection_evaluator;
     double m_best_profit_achieved{};
-    HFT::GAConfig m_config{};
 
-    static constexpr unsigned int seed{ 34 };
-    static std::mt19937 m_gen;
+    std::mt19937 m_gen;
+    HFT::GAConfig m_config{};
 };
 
 #endif

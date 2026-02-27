@@ -111,6 +111,8 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
             config.ga.initial_bit_flip_rate = std::stod(argv[++i]);
         } else if (arg == "--solver-id") {
             config.milp.solver_id = argv[++i];
+        } else if (arg == "--seed") {
+            config.ga.seed = std::stoull(argv[++i]);
         }
     }
 

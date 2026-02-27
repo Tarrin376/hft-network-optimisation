@@ -7,13 +7,7 @@
 
 class GASolverTest : public GASolver, public testing::Test {
 protected:
-    GASolverTest() : GASolver{ 100, HFT::GAConfig { 
-        .population_size = 5,
-        .generations = 2,
-        .mutation_rate = 0.05,
-        .crossover_rate = 0.8,
-        .initial_bit_flip_rate = 0.01,
-    } } {}
+    GASolverTest() : GASolver{ 100, HFT::GAConfig{} } {}
 
     double get_random_double(double min, double max) override {
         return m_rand_double_prob;

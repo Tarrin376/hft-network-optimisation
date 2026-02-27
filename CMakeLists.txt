@@ -49,7 +49,7 @@ target_link_libraries(unit_tests PRIVATE GTest::gtest_main hft_lib)
 FetchContent_Declare(
   benchmark
   GIT_REPOSITORY https://github.com/google/benchmark.git
-  GIT_TAG v1.9.1
+  GIT_TAG v1.9.4
 )
 FetchContent_MakeAvailable(benchmark)
 
