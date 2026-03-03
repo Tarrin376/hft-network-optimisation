@@ -7,14 +7,7 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-class BruteForceSolverTest : public testing::Test {
-protected:
-    BruteForceSolverTest() : m_brute_force_solver{ 100 } {}
-
-    BruteForceSolver m_brute_force_solver;
-};
-
-TEST_F(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
+TEST(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
     HFT::Graph graph{ 9, 12 };
     graph.add_edge({ .id = 0, .source = 0, .dest = 5, .rate_limit = 9, .latency = 75, .lease_cost = 170 }, true);
     graph.add_edge({ .id = 1, .source = 0, .dest = 8, .rate_limit = 3, .latency = 29, .lease_cost = 40 }, true);
@@ -29,8 +22,8 @@ TEST_F(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
     graph.add_edge({ .id = 10, .source = 1, .dest = 2, .rate_limit = 2, .latency = 18, .lease_cost = 27 }, false);
     graph.add_edge({ .id = 11, .source = 2, .dest = 3, .rate_limit = 2, .latency = 15, .lease_cost = 32 }, false);
 
-    HFT::ExpectedRequests expected_requests{};
-    expected_requests.push_back({ 
+    HFT::ExpectedRequests requests{};
+    requests.push_back({ 
         .server = 0, 
         .exchange = 3, 
         .num_orders = 3, 
@@ -38,16 +31,18 @@ TEST_F(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
         .max_order_profit = 360 
     });
 
-    double total_profit{ m_brute_force_solver.solve(graph, expected_requests) };
+    BruteForceSolver brute_force_solver{ graph, requests, 100 };
+
+    double total_profit{ brute_force_solver.solve() };
     EXPECT_FLOAT_EQ(total_profit, 24);
 }
 
-TEST_F(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
+TEST(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
     HFT::Graph graph{ 2, 1 };
     graph.add_edge({ .id = 0, .source = 0, .dest = 1, .rate_limit = 9, .latency = 75, .lease_cost = 170 }, true);
 
-    HFT::ExpectedRequests expected_requests{};
-    expected_requests.push_back({ 
+    HFT::ExpectedRequests requests{};
+    requests.push_back({ 
         .server = 0, 
         .exchange = 1, 
         .num_orders = 10, 
@@ -55,6 +50,8 @@ TEST_F(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
         .max_order_profit = 360 
     });
 
-    double total_profit{ m_brute_force_solver.solve(graph, expected_requests) };
+    BruteForceSolver brute_force_solver{ graph, requests, 100 };
+
+    double total_profit{ brute_force_solver.solve() };
     EXPECT_FLOAT_EQ(total_profit, -(std::numeric_limits<double>::infinity()));
 }

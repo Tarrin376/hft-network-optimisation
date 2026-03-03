@@ -18,29 +18,33 @@ class GASolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
     
-    GASolver(double max_latency, const HFT::GAConfig& config);
+    GASolver(const HFT::Graph& graph, 
+             const HFT::ExpectedRequests& requests, 
+             const HFT::GAConfig& config,
+             double max_latency);
 
-    double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests);
+    double solve() override;
 
 protected:
     virtual double get_random_double(double min, double max);
 
     std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& population_fitness);
-
     void crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx);
     void mutate(Chromosome& offspring);
 
 private:
-    std::vector<Chromosome> build_initial_population(std::size_t num_edges);
-    
-    std::vector<Chromosome> reproduce(const HFT::Graph& graph, 
-                                      const HFT::ExpectedRequests& requests, 
-                                      std::vector<Chromosome> population);
-    
-    const SelectionEvaluator m_selection_evaluator;
-    double m_best_profit_achieved{};
+    void build_initial_population();
+    void reproduce();
+    void warm_cache();
 
-    std::mt19937 m_gen;
+    std::mt19937& get_gen();
+
+    std::vector<Chromosome> m_cur_pop_buffer;
+    std::vector<Chromosome> m_next_pop_buffer;
+    
+    SelectionEvaluator m_selection_evaluator;
+    double m_best_profit{};
+
     HFT::GAConfig m_config{};
 };
 

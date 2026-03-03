@@ -14,13 +14,6 @@ SelectionEvaluator::SelectionEvaluator(double max_latency) : m_max_latency{ max_
 double SelectionEvaluator::evaluate(const HFT::Graph& graph, 
                                     const HFT::ExpectedRequests& requests,
                                     const std::vector<uint64_t>& selected_edges) const {
-    auto total_profit{ find_total_profit(graph, requests, selected_edges) };
-    return total_profit;
-}
-
-double SelectionEvaluator::find_total_profit(const HFT::Graph& graph, 
-                                             const HFT::ExpectedRequests& requests, 
-                                             const std::vector<uint64_t>& selected_edges) const {
     std::size_t num_edges{ graph.get_num_edges() };
     std::vector<int> path_flow(num_edges, 0);
     double total_profit{ 0 };

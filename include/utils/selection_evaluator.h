@@ -16,10 +16,6 @@ public:
                     const std::vector<uint64_t>& selected_edges) const;
 
 private:
-    double find_total_profit(const HFT::Graph& graph, 
-                             const HFT::ExpectedRequests& requests, 
-                             const std::vector<uint64_t>& selected_edges) const;
-
     int get_processed_orders(const HFT::Graph& graph, 
                              const HFT::Request& request, 
                              const std::vector<uint64_t>& selected_edges,

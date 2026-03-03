@@ -8,14 +8,16 @@ class Solver {
 public:
     virtual ~Solver() = default;
 
-    virtual double solve(
-        const HFT::Graph& graph, 
-        const HFT::ExpectedRequests& requests
-    ) = 0;
+    Solver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, double max_latency) 
+    : m_graph{ graph }
+    , m_requests{ requests }
+    , m_max_latency{ max_latency } {}
+
+    virtual double solve() = 0;
 
 protected:
-    explicit Solver(double max_latency) : m_max_latency{ max_latency } {}
-
+    const HFT::Graph& m_graph;
+    const HFT::ExpectedRequests& m_requests;
     const double m_max_latency{};
 };
 

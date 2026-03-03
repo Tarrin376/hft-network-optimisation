@@ -13,13 +13,13 @@
 #include "solvers/ga_solver.h"
 #include "solvers/milp_solver.h"
 
-std::unique_ptr<Solver> determine_solver(const HFT::Config& config) {
+std::unique_ptr<Solver> determine_solver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, HFT::Config& config) {
     if (config.algorithm == "brute_force") {
-        return std::make_unique<BruteForceSolver>(config.max_latency);
+        return std::make_unique<BruteForceSolver>(graph, requests, config.max_latency);
     } else if (config.algorithm == "genetic") {
-        return std::make_unique<GASolver>(config.max_latency, config.ga);
+        return std::make_unique<GASolver>(graph, requests, config.ga, config.max_latency);
     } else if (config.algorithm == "milp") {
-        return std::make_unique<MILPSolver>(config.max_latency, config.milp);
+        return std::make_unique<MILPSolver>(graph, requests, config.milp, config.max_latency);
     } else {
         return nullptr;
     }
@@ -40,13 +40,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::unique_ptr<Solver> solver{ determine_solver(config) };
+    std::unique_ptr<Solver> solver{ determine_solver(*graph, requests, config) };
     if (!solver) {
         std::cout << "Failed to determine solver '" << config.algorithm << "'\n";
         return 1;
     }
 
-    double max_profit{ solver->solve(*graph, requests) };
+    double max_profit{ solver->solve() };
     if (max_profit == 0) {
         std::cout << "No suitable network configuration found for the given set of requests\n";
     } else {

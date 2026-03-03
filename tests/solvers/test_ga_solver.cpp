@@ -3,11 +3,14 @@
 #include <cstdint>
 
 #include "solvers/ga_solver.h"
+
 #include "types/config.h"
+#include "types/expected_requests.h"
+#include "types/graph.h"
 
 class GASolverTest : public GASolver, public testing::Test {
 protected:
-    GASolverTest() : GASolver{ 100, HFT::GAConfig{} } {}
+    GASolverTest() : GASolver{ graph, requests, HFT::GAConfig{}, 100 } {}
 
     double get_random_double(double min, double max) override {
         return m_rand_double_prob;
@@ -23,6 +26,8 @@ protected:
 
 private:
     double m_rand_double_prob{};
+    const HFT::Graph graph{ 1, 1 };
+    const HFT::ExpectedRequests requests{};
 };
 
 TEST_F(GASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {

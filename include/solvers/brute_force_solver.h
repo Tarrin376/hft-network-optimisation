@@ -13,17 +13,14 @@
 
 class BruteForceSolver : public Solver {
 public:
-    BruteForceSolver(double max_latency);
+    BruteForceSolver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, double max_latency);
 
-    double solve(const HFT::Graph& graph, const HFT::ExpectedRequests& requests) override;
+    double solve() override;
 
 private:
-    double backtrack(const HFT::Graph& graph, 
-                     const HFT::ExpectedRequests& requests, 
-                     std::vector<uint64_t>& selected_edges, 
-                     std::size_t index);
+    double backtrack(std::vector<uint64_t>& selected_edges, std::size_t index);
     
-    const SelectionEvaluator m_selection_evaluator;
+    SelectionEvaluator m_selection_evaluator;
 };
 
 #endif
