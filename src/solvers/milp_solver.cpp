@@ -65,7 +65,7 @@ double MILPSolver::solve() {
 }
 
 void MILPSolver::set_solver(const std::string& solver_id) {
-    std::unique_ptr<or_tools::MPSolver> new_solver(or_tools::MPSolver::CreateSolver(solver_id));
+    std::unique_ptr<or_tools::MPSolver> new_solver{ or_tools::MPSolver::CreateSolver(solver_id) };
     if (!new_solver) {
         LOG(WARNING) << "Could not create solver " << solver_id;
         return;

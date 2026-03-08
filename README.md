@@ -8,23 +8,7 @@ Balancing Cost, Latency, and Capacity: Network Optimisation for High-Frequency T
 
 ### Abstract
 
-This work studies a network design problem in high-frequency trading (HFT),
-where a trading firm must decide which cross-connects to lease between its
-servers and colocated exchanges in order to route orders with minimal latency
-and maximal expected profit. Orders may be sent either directly to an ex-
-change or indirectly via other exchanges, subject to latency-dependent profit
-and rate-limit constraints on each link. We formulate this task as a multi-
-commodity capacitated fixed-charge network flow problem (MCND), which is
-NP-hard due to the combinatorial decision of leasing edges with fixed costs. To
-address the resulting computational challenges, we develop a suite of heuristic
-and metaheuristic algorithms such as greedy improvement methods, simulated
-annealing, and genetic algorithms, combined with fast shortest-path based flow
-assignment. We implement both single-threaded and OpenMP-parallel versions
-to enable scalable exploration of the solution space. Alongside this, we formu-
-late the problem as a mixed-integer linear program (MILP) and solve it using
-the Gurobi MILP solver. Empirical evaluation demonstrates that these ap-
-proaches efficiently produce high-quality solutions for large network instances
-where exact optimisation is computationally intractable.
+This work studies a High-Frequency Trading (HFT) Network Design Problem, where a trading firm must decide which cross-connects to lease between its servers and colocated exchanges in order to route orders with minimal latency, therefore maximising returns. Orders may be sent either directly to an exchange or indirectly via other exchanges, subject to latency-dependent profit and rate-limit constraints on each link. We formulate this task as a Fixed-Charge Shortest Path Problem (FCSPP) with separable commodity flows, which is NP-hard due to the combinatorial decision of leasing edges with fixed costs. To address the resulting computational challenges, we develop a suite of exact and metaheuristic approaches, including exhaustive search, simulated annealing, and genetic algorithms, combined with efficient shortest-path flow assignment. We utilise OpenMP to allow for scalable exploration of the solution space through the use of parallelisation. Alongside this, we formulate the problem as a Mixed-Integer Linear Program (MILP) and solve it using the SCIP and CBC solvers implemented in the Google OR-Tools C++ library. Empirical evaluation demonstrates that these approaches efficiently produce high-quality solutions for large network instances where exact optimisation is computationally intractable.
 
 ## Requirements
 - C++20 or newer
@@ -37,25 +21,26 @@ where exact optimisation is computationally intractable.
 > git clone https://github.com/Tarrin376/hft-network-optimization.git
 # Go to the root directory
 > cd hft-network-optimization
-# Create build files using cmake
-> cmake -B build
-# Build the repo. 
-## **optional but recommended** Include -j<num_processes> to allocate more CPU cores to speed up build times.
-> cmake --build build
+# Create build directory
+> mkdir build
+# Create build files (including necessary dependencies) using cmake
+> cmake -S . -B build -D BUILD_DEPS:BOOL=ON
+# Build the repo.
+> cmake --build build -j<num_processes>
 ```
 
-## Running tests using Catch2
+## Running tests using Google Test
 ```bash
 # Check out the build directory
 > cd build
-# Run the 'my_tests' executable to run tests
-> ./my_tests
+# Run the 'unit_tests' executable to run tests
+> ./unit_tests
 ```
 
 ## Running benchmarks using Google Benchmark
 ```bash
 # Check out the build directory
 > cd build
-# Run the 'my_bench' executable to run benchmarks
-> ./my_bench
+# Run the 'bench' executable to run benchmarks
+> ./bench
 ```
