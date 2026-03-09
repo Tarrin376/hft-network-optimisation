@@ -11,7 +11,7 @@
 
 #include "solvers/solver.h"
 
-class BruteForceSolver final : public Solver {
+class BruteForceSolver : public Solver {
 public:
     BruteForceSolver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, double max_latency);
 

@@ -14,7 +14,7 @@
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
-class GASolver final : public Solver {
+class GASolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
     

@@ -29,6 +29,11 @@ void HFT::Graph::add_edge(const Edge& edge, bool source_is_server) {
     dst.incoming_edges.push_back(edge.id);
 }
 
+void HFT::Graph::reset() {
+    m_edges.assign({});
+    m_nodes.assign({});
+}
+
 const HFT::Edge& HFT::Graph::get_edge(std::size_t edge_id) const {
     assert(edge_id < m_num_edges);
     return m_edges[edge_id];

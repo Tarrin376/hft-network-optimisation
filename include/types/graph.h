@@ -27,6 +27,8 @@ namespace HFT {
 
         void add_edge(const Edge& edge, bool source_is_server);
 
+        void reset();
+
         const Edge& get_edge(std::size_t edge_id) const;
         const Node& get_node(std::size_t node_id) const;
 
