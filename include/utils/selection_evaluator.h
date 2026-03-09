@@ -7,7 +7,7 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-class SelectionEvaluator {
+class SelectionEvaluator final {
 public:
     SelectionEvaluator(double max_latency);
 

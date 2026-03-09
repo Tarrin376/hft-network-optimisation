@@ -25,7 +25,6 @@ MILPSolver::MILPSolver(const HFT::Graph& graph,
 : Solver{ graph, requests, max_latency }
 , m_config{ config } {
     set_solver(config.solver_id);
-    build();
 }
 
 double MILPSolver::solve() {
@@ -73,16 +72,19 @@ void MILPSolver::set_solver(const std::string& solver_id) {
 
     m_solver = std::move(new_solver);
     m_config.solver_id = solver_id;
+    build();
 }
 
 void MILPSolver::build() {
-    build_edge_variables();
-    build_flow_variables();
+    if (m_solver) {
+        build_edge_variables();
+        build_flow_variables();
 
-    apply_flow_conservation_constraints();
-    apply_capacity_constraints();
+        apply_flow_conservation_constraints();
+        apply_capacity_constraints();
 
-    build_objective_function();
+        build_objective_function();
+    }
 }
 
 void MILPSolver::build_edge_variables() {

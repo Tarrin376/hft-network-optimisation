@@ -15,7 +15,7 @@
 
 namespace or_tools = operations_research;
 
-class MILPSolver : public Solver {
+class MILPSolver final : public Solver {
 public:
     MILPSolver(const HFT::Graph& graph, 
                const HFT::ExpectedRequests& requests,
