@@ -41,14 +41,12 @@ double GASolver::get_random_double(double min, double max) {
     return dist(get_gen());
 }
 
-std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& weights) {
-    assert(weights.size() == m_config.population_size && "Weights should have the same length as population size");
-
+std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& pop_fitness) {
     std::vector<std::size_t> selected_parents(m_config.population_size, 0);
-    double total{ std::accumulate(weights.begin(), weights.end(), 0.0) };
+    double total{ std::accumulate(pop_fitness.begin(), pop_fitness.end(), 0.0) };
 
     const double step{ total / static_cast<double>(m_config.population_size) };
-    double cumulative{ weights[0] };
+    double cumulative{ pop_fitness[0] };
 
     double pointer{ get_random_double(0.0, step) };
     std::size_t idx{ 0 };
@@ -56,7 +54,7 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
         while (pointer > cumulative) {
             ++idx;
-            cumulative += weights[idx];
+            cumulative += pop_fitness[idx];
         }
 
         selected_parents[i] = idx;
@@ -124,8 +122,8 @@ void GASolver::build_initial_population() {
     m_cur_pop_buffer.back() = std::move(random);
 }
 
-void GASolver::reproduce() {
-    std::vector<double> weights(m_config.population_size, 0);
+std::vector<double> GASolver::get_population_fitness() {
+    std::vector<double> pop_fitness(m_config.population_size, 0.0);
 
     #pragma omp parallel
     {
@@ -138,11 +136,16 @@ void GASolver::reproduce() {
                 m_best_profit = fitness;
             }
 
-            weights[i] = std::max(fitness, 0.0);
+            pop_fitness[i] = std::max(fitness, 0.0);
         }
     }
 
-    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(weights) };
+    return pop_fitness;
+}
+
+void GASolver::reproduce() {
+    std::vector<double> pop_fitness{ get_population_fitness() };
+    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(pop_fitness) };
 
     #pragma omp parallel for
     for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {

@@ -21,6 +21,11 @@ private:
     void create_edge(std::size_t from, std::size_t to, std::size_t edge_id);
     void assign_servers();
 
+    std::uniform_int_distribution<int> m_rate_limit_dist;
+    std::uniform_int_distribution<int> m_lease_cost_dist;
+    std::uniform_real_distribution<double> m_latency_dist;
+    std::uniform_int_distribution<int> m_node_dist;
+
     std::unordered_set<std::size_t> m_servers{};
     HFT::Graph m_graph;
 

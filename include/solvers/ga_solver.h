@@ -27,12 +27,13 @@ public:
 protected:
     virtual double get_random_double(double min, double max);
 
-    std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& population_fitness);
+    std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& pop_fitness);
     void crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx);
     void mutate(Chromosome& offspring);
 
 private:
     void build_initial_population();
+    std::vector<double> get_population_fitness();
     void reproduce();
     void warm_cache();
 
