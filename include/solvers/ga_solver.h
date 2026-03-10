@@ -41,7 +41,6 @@ private:
     std::vector<Chromosome> m_cur_pop_buffer;
     std::vector<Chromosome> m_next_pop_buffer;
     
-    SelectionEvaluator m_selection_evaluator;
     double m_best_profit{ std::numeric_limits<double>::lowest() };
 
     HFT::GAConfig m_config{};

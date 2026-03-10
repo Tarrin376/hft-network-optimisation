@@ -23,7 +23,6 @@ GASolver::GASolver(const HFT::Graph& graph,
 , m_crossover_dist(0, graph.get_num_edges() - 1)
 , m_cur_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
 , m_next_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
-, m_selection_evaluator{ max_latency }
 , m_config{ config } {
     warm_cache();
 }
@@ -68,7 +67,9 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
 }
 
 void GASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
-    assert(start_idx <= end_idx && "Start index must be no larger than the end index for crossover operation");
+    if (start_idx > end_idx) {
+        return;
+    }
 
     int start_block{ start_idx / 64 };
     int end_block{ end_idx / 64 };
@@ -125,12 +126,20 @@ void GASolver::build_initial_population() {
 
 void GASolver::reproduce() {
     std::vector<double> weights(m_config.population_size, 0);
-    
-    #pragma omp parallel for reduction(max:m_best_profit)
-    for (std::size_t i = 0; i < m_config.population_size; ++i) {
-        double fitness = m_selection_evaluator.evaluate(m_graph, m_requests, m_cur_pop_buffer[i]);
-        m_best_profit = std::max(m_best_profit, fitness);
-        weights[i] = std::max(fitness, 0.0);
+
+    #pragma omp parallel
+    {
+        SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
+
+        #pragma omp for reduction(max:m_best_profit)
+        for (std::size_t i = 0; i < m_config.population_size; ++i) {
+            double fitness = evaluator.evaluate(m_cur_pop_buffer[i]);
+            if (fitness > m_best_profit) {
+                m_best_profit = fitness;
+            }
+
+            weights[i] = std::max(fitness, 0.0);
+        }
     }
 
     std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(weights) };

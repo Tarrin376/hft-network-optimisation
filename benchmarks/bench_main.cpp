@@ -14,17 +14,17 @@ static void BM_GraphGen(benchmark::State& state) {
             .max_latency = 20.5,
             .max_rate_limit = 4,
             .max_lease_cost = 300,
-            .num_nodes = 6,
-            .num_edges = 20,
+            .num_nodes = 17,
+            .num_edges = 70,
             .num_servers = 1
         };
 
         HFT::ExpectedRequests requests{};
         requests.push_back({ 
             .server = 4, 
-            .exchange = 5, 
-            .num_orders = 6, 
-            .planning_horizon = 1, 
+            .exchange = 14, 
+            .num_orders = 12, 
+            .planning_horizon = 3, 
             .max_order_profit = 3000 
         });
 

@@ -9,7 +9,7 @@
 
 BruteForceSolver::BruteForceSolver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, double max_latency) 
     : Solver{ graph, requests, max_latency }
-    , m_selection_evaluator{ max_latency } {}
+    , m_selection_evaluator{ max_latency, graph, requests } {}
 
 double BruteForceSolver::solve() {
     std::vector<uint64_t> selected_edges(m_graph.get_num_edges(), 0);
@@ -19,7 +19,7 @@ double BruteForceSolver::solve() {
 
 double BruteForceSolver::backtrack(std::vector<uint64_t>& selected_edges, std::size_t index) {
     if (index == m_graph.get_num_edges()) {
-        return m_selection_evaluator.evaluate(m_graph, m_requests, selected_edges);
+        return m_selection_evaluator.evaluate(selected_edges);
     }
 
     selected_edges[index / 64] |= (1ULL << (index % 64));
