@@ -4,13 +4,12 @@
 #include <vector>
 #include <cstdint>
 #include <random>
+#include <limits>
 
 #include "utils/selection_evaluator.h"
-
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
-
 #include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
@@ -43,7 +42,7 @@ private:
     std::vector<Chromosome> m_next_pop_buffer;
     
     SelectionEvaluator m_selection_evaluator;
-    double m_best_profit{};
+    double m_best_profit{ std::numeric_limits<double>::lowest() };
 
     HFT::GAConfig m_config{};
 };

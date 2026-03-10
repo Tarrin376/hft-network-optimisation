@@ -1,10 +1,9 @@
+#include "utils/selection_evaluator.h"
+
 #include <cstdint>
 #include <vector>
 #include <queue>
 #include <limits>
-#include <iostream>
-
-#include "utils/selection_evaluator.h"
 
 #include "types/expected_requests.h"
 #include "types/graph.h"
@@ -23,7 +22,7 @@ double SelectionEvaluator::evaluate(const HFT::Graph& graph,
         while (remaining_orders > 0) {
             int processed_orders = get_processed_orders(graph, request, selected_edges, path_flow, remaining_orders);
             if (processed_orders == 0) {
-                return -(std::numeric_limits<double>::infinity());
+                return std::numeric_limits<double>::lowest();
             }
             
             remaining_orders -= processed_orders;

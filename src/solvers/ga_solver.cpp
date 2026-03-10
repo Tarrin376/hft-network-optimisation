@@ -1,21 +1,18 @@
 #ifndef GENETIC_ALGORITHM_SOLVER_H
 #define GENETIC_ALGORITHM_SOLVER_H
 
+#include "solvers/ga_solver.h"
+
 #include <vector>
 #include <cstdint>
 #include <random>
 #include <numeric>
-#include <mutex>
 #include <cassert>
-#include <algorithm>
 
 #include "utils/bit_utils.h"
-
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
-
-#include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
 GASolver::GASolver(const HFT::Graph& graph, 

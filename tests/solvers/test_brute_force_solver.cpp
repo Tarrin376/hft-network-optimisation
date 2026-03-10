@@ -1,9 +1,8 @@
-#include <gtest/gtest.h>
 #include <limits>
-#include <iostream>
+
+#include <gtest/gtest.h>
 
 #include "solvers/brute_force_solver.h"
-
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
@@ -53,5 +52,5 @@ TEST(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
     BruteForceSolver brute_force_solver{ graph, requests, 100 };
 
     double total_profit{ brute_force_solver.solve() };
-    EXPECT_FLOAT_EQ(total_profit, -(std::numeric_limits<double>::infinity()));
+    EXPECT_FLOAT_EQ(total_profit, -(std::numeric_limits<double>::lowest()));
 }

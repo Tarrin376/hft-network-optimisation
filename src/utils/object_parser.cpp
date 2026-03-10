@@ -1,3 +1,5 @@
+#include "utils/object_parser.h"
+
 #include <string>
 #include <memory>
 #include <sstream>
@@ -5,8 +7,6 @@
 
 #include "types/expected_requests.h"
 #include "types/graph.h"
-
-#include "utils/object_parser.h"
 #include "utils/csv_reader.h"
 
 std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_path) {

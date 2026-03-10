@@ -1,3 +1,5 @@
+#include "solvers/milp_solver.h"
+
 #include <cstdlib>
 #include <memory>
 #include <cstdint>
@@ -14,8 +16,6 @@
 #include "types/expected_requests.h"
 #include "types/milp_config.h"
 #include "types/graph.h"
-
-#include "solvers/milp_solver.h"
 #include "solvers/solver.h"
 
 MILPSolver::MILPSolver(const HFT::Graph& graph, 

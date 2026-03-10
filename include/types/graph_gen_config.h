@@ -5,12 +5,12 @@
 
 namespace HFT {
     struct GraphGenConfig {
-        double server_density{};
         double max_latency{};
         int max_rate_limit{};
         int max_lease_cost{};
         std::size_t num_nodes{};
         std::size_t num_edges{};
+        std::size_t num_servers{};
         unsigned long long seed{ 34ULL };
     };
 }

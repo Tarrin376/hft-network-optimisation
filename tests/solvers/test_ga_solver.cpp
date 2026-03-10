@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
 #include <vector>
 #include <cstdint>
 
-#include "solvers/ga_solver.h"
+#include <gtest/gtest.h>
 
+#include "solvers/ga_solver.h"
 #include "types/config.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"

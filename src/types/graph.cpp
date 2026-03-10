@@ -1,8 +1,8 @@
+#include "types/graph.h"
+
 #include <vector>
 #include <cassert>
 #include <cstddef>
-
-#include "types/graph.h"
 
 HFT::Graph::Graph(std::size_t num_nodes, std::size_t num_edges) 
     : m_nodes(num_nodes)
@@ -30,8 +30,8 @@ void HFT::Graph::add_edge(const Edge& edge, bool source_is_server) {
 }
 
 void HFT::Graph::reset() {
-    m_edges.assign({});
-    m_nodes.assign({});
+    m_edges.assign(get_num_edges(), {});
+    m_nodes.assign(get_num_nodes(), {});
 }
 
 const HFT::Edge& HFT::Graph::get_edge(std::size_t edge_id) const {

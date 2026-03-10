@@ -1,24 +1,39 @@
 #include <cstdint>
+#include <iostream>
+
 #include <benchmark/benchmark.h>
 
 #include "utils/graph_generator.h"
-
+#include "solvers/ga_solver.h"
 #include "types/graph_gen_config.h"
 #include "types/graph.h"
 
 static void BM_GraphGen(benchmark::State& state) {
     for (auto _ : state) {
         HFT::GraphGenConfig config{
-            .server_density = 0.01,
             .max_latency = 20.5,
             .max_rate_limit = 4,
-            .max_lease_cost = 3000,
-            .num_nodes = 10,
-            .num_edges = 5
+            .max_lease_cost = 300,
+            .num_nodes = 6,
+            .num_edges = 20,
+            .num_servers = 1
         };
 
+        HFT::ExpectedRequests requests{};
+        requests.push_back({ 
+            .server = 4, 
+            .exchange = 5, 
+            .num_orders = 6, 
+            .planning_horizon = 1, 
+            .max_order_profit = 3000 
+        });
+
         GraphGenerator generator{ config };
-        HFT::Graph& graph{ generator.generate() };
+        const HFT::Graph& graph{ generator.generate() };
+
+        GASolver solver{ graph, requests, {}, 20.5 };
+        double total_profit { solver.solve() };
+        std::cout << "Total profit: " << total_profit << '\n';
     }
 }
 

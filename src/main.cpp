@@ -3,11 +3,9 @@
 #include <memory>
 
 #include "utils/object_parser.h"
-
 #include "types/expected_requests.h"
 #include "types/graph.h"
 #include "types/config.h"
-
 #include "solvers/solver.h"
 #include "solvers/brute_force_solver.h"
 #include "solvers/ga_solver.h"
