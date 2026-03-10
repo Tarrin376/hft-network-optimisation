@@ -20,6 +20,7 @@ GASolver::GASolver(const HFT::Graph& graph,
                    const HFT::GAConfig& config,
                    double max_latency)
 : Solver{ graph, requests, max_latency }
+, m_crossover_dist(0, graph.get_num_edges() - 1)
 , m_cur_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
 , m_next_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
 , m_selection_evaluator{ max_latency }
@@ -143,9 +144,8 @@ void GASolver::reproduce() {
         auto& parent2 = m_next_pop_buffer[i + 1];
         
         if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
-            std::uniform_int_distribution<int> point_dist(0, static_cast<int>(m_graph.get_num_edges()) - 1);
-            int start{ point_dist(get_gen()) };
-            int end{ point_dist(get_gen()) };
+            int start{ m_crossover_dist(get_gen()) };
+            int end{ m_crossover_dist(get_gen()) };
             crossover(parent1, parent2, std::min(start, end), std::max(start, end));
         }
 

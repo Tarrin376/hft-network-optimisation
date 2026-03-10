@@ -36,7 +36,7 @@ private:
     void reproduce();
     void warm_cache();
 
-    std::mt19937& get_gen();
+    std::uniform_int_distribution<int> m_crossover_dist;
 
     std::vector<Chromosome> m_cur_pop_buffer;
     std::vector<Chromosome> m_next_pop_buffer;
@@ -45,6 +45,7 @@ private:
     double m_best_profit{ std::numeric_limits<double>::lowest() };
 
     HFT::GAConfig m_config{};
+    std::mt19937& get_gen();
 };
 
 #endif
