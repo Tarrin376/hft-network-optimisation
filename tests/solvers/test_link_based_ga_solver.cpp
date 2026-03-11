@@ -3,14 +3,14 @@
 
 #include <gtest/gtest.h>
 
-#include "solvers/ga_solver.h"
+#include "solvers/link_based_ga_solver.h"
 #include "types/config.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-class GASolverTest : public GASolver, public testing::Test {
+class LinkBasedGASolverTest : public LinkBasedGASolver, public testing::Test {
 protected:
-    GASolverTest() : GASolver{ graph, requests, HFT::GAConfig{}, 100 } {}
+    LinkBasedGASolverTest() : LinkBasedGASolver{ graph, requests, HFT::GAConfig{}, 100 } {}
 
     double get_random_double(double min, double max) override {
         return m_rand_double_prob;
@@ -30,9 +30,9 @@ private:
     const HFT::ExpectedRequests requests{};
 };
 
-TEST_F(GASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
+TEST_F(LinkBasedGASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
     Chromosome c{ 0b1011101101ULL }; 
-    uint64_t original_val{ c[0] };
+    std::uint64_t original_val{ c[0] };
 
     set_random_double_prob(0.9);
     mutate(c);
@@ -40,15 +40,15 @@ TEST_F(GASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
     EXPECT_EQ(c[0], original_val);
 }
 
-TEST_F(GASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
+TEST_F(LinkBasedGASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
     Chromosome c{ 0ULL }; 
     mutate(c);
 
-    uint64_t expected{ ~0ULL };
+    std::uint64_t expected{ ~0ULL };
     EXPECT_EQ(c[0], expected);
 }
 
-TEST_F(GASolverTest, CrossoverSwapsMiddleSegment) {
+TEST_F(LinkBasedGASolverTest, CrossoverSwapsMiddleSegment) {
     Chromosome p1{ 0, ~0ULL, 0 };
     Chromosome p2{ ~0ULL, 0, ~0ULL };
 
@@ -61,7 +61,7 @@ TEST_F(GASolverTest, CrossoverSwapsMiddleSegment) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GASolverTest, CrossoverSwapsSingleBits) {
+TEST_F(LinkBasedGASolverTest, CrossoverSwapsSingleBits) {
     Chromosome p1{ 1 };
     Chromosome p2{ 0 };
 
@@ -74,7 +74,7 @@ TEST_F(GASolverTest, CrossoverSwapsSingleBits) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GASolverTest, CrossoverSwapsAllBits) {
+TEST_F(LinkBasedGASolverTest, CrossoverSwapsAllBits) {
     Chromosome p1{ ~0ULL, ~0ULL, ~0ULL };
     Chromosome p2{ 0, 0, 0 };
 
@@ -87,7 +87,7 @@ TEST_F(GASolverTest, CrossoverSwapsAllBits) {
     EXPECT_EQ(p2, expected_p2);
 }
 
-TEST_F(GASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
+TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
     std::vector<double> population_fitness{ 6, 2, 2 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 1 };
@@ -96,7 +96,7 @@ TEST_F(GASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessVal
     EXPECT_EQ(ans, expected_ans);
 }
 
-TEST_F(GASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
+TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
     std::vector<double> population_fitness{ 6, 0, 4 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 2 };
@@ -105,7 +105,7 @@ TEST_F(GASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
     EXPECT_EQ(ans, expected_ans);
 }
 
-TEST_F(GASolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
+TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
     std::vector<double> population_fitness{ 4.2, 3.6, 2.2 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 1, 2 };

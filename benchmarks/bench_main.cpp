@@ -4,7 +4,7 @@
 #include <benchmark/benchmark.h>
 
 #include "utils/graph_generator.h"
-#include "solvers/ga_solver.h"
+#include "solvers/link_based_ga_solver.h"
 #include "types/graph_gen_config.h"
 #include "types/graph.h"
 
@@ -31,7 +31,7 @@ static void BM_GraphGen(benchmark::State& state) {
         GraphGenerator generator{ config };
         const HFT::Graph& graph{ generator.generate() };
 
-        GASolver solver{ graph, requests, {}, 20.5 };
+        LinkBasedGASolver solver{ graph, requests, {}, 20.5 };
         double total_profit { solver.solve() };
         std::cout << "Total profit: " << total_profit << '\n';
     }

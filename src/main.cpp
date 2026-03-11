@@ -8,14 +8,17 @@
 #include "types/config.h"
 #include "solvers/solver.h"
 #include "solvers/brute_force_solver.h"
-#include "solvers/ga_solver.h"
+#include "solvers/link_based_ga_solver.h"
+#include "solvers/path_based_ga_solver.h"
 #include "solvers/milp_solver.h"
 
 std::unique_ptr<Solver> determine_solver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, HFT::Config& config) {
-    if (config.algorithm == "brute_force") {
+    if (config.algorithm == "brute-force") {
         return std::make_unique<BruteForceSolver>(graph, requests, config.max_latency);
-    } else if (config.algorithm == "genetic") {
-        return std::make_unique<GASolver>(graph, requests, config.ga, config.max_latency);
+    } else if (config.algorithm == "link-based-ga") {
+        return std::make_unique<LinkBasedGASolver>(graph, requests, config.ga, config.max_latency);
+    } else if (config.algorithm == "path-based-ga") {
+        return std::make_unique<PathBasedGASolver>(graph, requests, config.ga, config.max_latency);
     } else if (config.algorithm == "milp") {
         return std::make_unique<MILPSolver>(graph, requests, config.milp, config.max_latency);
     } else {

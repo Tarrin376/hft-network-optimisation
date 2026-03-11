@@ -1,5 +1,5 @@
-#ifndef GA_SOLVER_H
-#define GA_SOLVER_H
+#ifndef LINK_BASED_GA_SOLVER_H
+#define LINK_BASED_GA_SOLVER_H
 
 #include <vector>
 #include <cstdint>
@@ -10,17 +10,16 @@
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
-#include "solvers/ga_solver.h"
 #include "solvers/solver.h"
 
-class GASolver : public Solver {
+class LinkBasedGASolver : public Solver {
 public:
     using Chromosome = std::vector<std::uint64_t>;
     
-    GASolver(const HFT::Graph& graph, 
-             const HFT::ExpectedRequests& requests, 
-             const HFT::GAConfig& config,
-             double max_latency);
+    LinkBasedGASolver(const HFT::Graph& graph, 
+                      const HFT::ExpectedRequests& requests, 
+                      const HFT::GAConfig& config,
+                      double max_latency);
 
     double solve() override;
 

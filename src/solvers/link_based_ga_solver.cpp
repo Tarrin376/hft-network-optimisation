@@ -1,7 +1,7 @@
 #ifndef GENETIC_ALGORITHM_SOLVER_H
 #define GENETIC_ALGORITHM_SOLVER_H
 
-#include "solvers/ga_solver.h"
+#include "solvers/link_based_ga_solver.h"
 
 #include <vector>
 #include <cstdint>
@@ -15,10 +15,10 @@
 #include "types/graph.h"
 #include "solvers/solver.h"
 
-GASolver::GASolver(const HFT::Graph& graph, 
-                   const HFT::ExpectedRequests& requests, 
-                   const HFT::GAConfig& config,
-                   double max_latency)
+LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph, 
+                                     const HFT::ExpectedRequests& requests, 
+                                     const HFT::GAConfig& config,
+                                     double max_latency)
 : Solver{ graph, requests, max_latency }
 , m_crossover_dist(0, graph.get_num_edges() - 1)
 , m_cur_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
@@ -27,7 +27,7 @@ GASolver::GASolver(const HFT::Graph& graph,
     warm_cache();
 }
 
-double GASolver::solve() {
+double LinkBasedGASolver::solve() {
     build_initial_population();
     for (int i = 0; i < m_config.generations; ++i) {
         reproduce();
@@ -36,12 +36,12 @@ double GASolver::solve() {
     return m_best_profit;
 }
 
-double GASolver::get_random_double(double min, double max) {
+double LinkBasedGASolver::get_random_double(double min, double max) {
     std::uniform_real_distribution<double> dist(min, max);
     return dist(get_gen());
 }
 
-std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vector<double>& pop_fitness) {
+std::vector<std::size_t> LinkBasedGASolver::stochastic_universal_sampling(const std::vector<double>& pop_fitness) {
     std::vector<std::size_t> selected_parents(m_config.population_size, 0);
     double total{ std::accumulate(pop_fitness.begin(), pop_fitness.end(), 0.0) };
 
@@ -64,7 +64,7 @@ std::vector<std::size_t> GASolver::stochastic_universal_sampling(const std::vect
     return selected_parents;
 }
 
-void GASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
+void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
     if (start_idx > end_idx) {
         return;
     }
@@ -85,7 +85,7 @@ void GASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx
     }
 }
 
-void GASolver::mutate(Chromosome& offspring) {
+void LinkBasedGASolver::mutate(Chromosome& offspring) {
     std::geometric_distribution<std::size_t> skip_dist(m_config.mutation_rate);
 
     std::size_t total_bits = offspring.size() * 64;
@@ -100,7 +100,7 @@ void GASolver::mutate(Chromosome& offspring) {
     }
 }
 
-void GASolver::build_initial_population() {
+void LinkBasedGASolver::build_initial_population() {
     std::size_t num_edges{ m_graph.get_num_edges() };
     
     #pragma omp parallel for
@@ -122,7 +122,7 @@ void GASolver::build_initial_population() {
     m_cur_pop_buffer.back() = std::move(random);
 }
 
-std::vector<double> GASolver::get_population_fitness() {
+std::vector<double> LinkBasedGASolver::get_population_fitness() {
     std::vector<double> pop_fitness(m_config.population_size, 0.0);
 
     #pragma omp parallel
@@ -143,7 +143,7 @@ std::vector<double> GASolver::get_population_fitness() {
     return pop_fitness;
 }
 
-void GASolver::reproduce() {
+void LinkBasedGASolver::reproduce() {
     std::vector<double> pop_fitness{ get_population_fitness() };
     std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(pop_fitness) };
 
@@ -168,7 +168,7 @@ void GASolver::reproduce() {
     std::swap(m_cur_pop_buffer, m_next_pop_buffer);
 }
 
-void GASolver::warm_cache() {
+void LinkBasedGASolver::warm_cache() {
     // 'volatile' prevents the compiler from optimising the loop away
     volatile double dummy_sum = 0;
 
@@ -184,13 +184,12 @@ void GASolver::warm_cache() {
     for (std::size_t i = 0; i < m_graph.get_num_nodes(); ++i) {
         const auto& node = m_graph.get_node(i);
         if (!node.outgoing_edges.empty()) {
-            // Touch the first edge index to bring the inner vector's data page into cache
             dummy_sum += node.outgoing_edges[0];
         }
     }
 }
 
-std::mt19937& GASolver::get_gen() {
+std::mt19937& LinkBasedGASolver::get_gen() {
     static thread_local std::mt19937 generator{ m_config.seed };
     return generator;
 }
