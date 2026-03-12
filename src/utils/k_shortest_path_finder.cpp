@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <queue>
 #include <limits>
-#include <stack>
 #include <algorithm>
 
 #include "types/graph.h"
@@ -123,20 +122,13 @@ std::shared_ptr<KShortestPathFinder::Path> KShortestPathFinder::dijkstra(std::si
     auto path{ std::make_unique<Path>() };
     const HFT::Edge* cur_edge{ parent_edge_id_buffer[dest] };
 
-    std::stack<std::size_t> path_edges{};
-
     while (cur_edge) {
-        path_edges.push(cur_edge->id);
+        path->edge_indices.push_back(cur_edge->id);
         path->total_latency += cur_edge->latency;
         cur_edge = parent_edge_id_buffer[cur_edge->source];
     }
 
-    while (!path_edges.empty()) {
-        auto edge_id = path_edges.top();
-        path->edge_indices.push_back(edge_id);
-        path_edges.pop();
-    }
-
+    std::reverse(path->edge_indices.begin(), path->edge_indices.end());
     return path;
 }
 
