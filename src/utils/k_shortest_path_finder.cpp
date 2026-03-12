@@ -1,11 +1,12 @@
 #include "utils/k_shortest_path_finder.h"
 
 #include <vector>
-#include <memory>
 #include <cstdint>
 #include <queue>
 #include <limits>
 #include <algorithm>
+#include <functional>
+#include <iostream>
 
 #include "types/graph.h"
 #include "types/state.h"
@@ -13,57 +14,52 @@
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     : m_graph{ graph } {}
 
-std::vector<std::shared_ptr<KShortestPathFinder::Path>> KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
-    std::shared_ptr<Path> path{ dijkstra(source, dest) };
-    if (!path) {
+std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
+    Path path{ dijkstra(source, dest) };
+    if (path.edge_indices.empty()) {
         return {};
     }
 
-    auto cmp = [](std::shared_ptr<Path>& p1, std::shared_ptr<Path>& p2) -> bool {
-        return p1->total_latency > p2->total_latency;
-    };
-
-    std::priority_queue<std::shared_ptr<Path>, std::vector<std::shared_ptr<Path>>, decltype(cmp)> pq{};
-    std::vector<std::shared_ptr<Path>> confirmed_paths{};
-    pq.push(path);
+    std::priority_queue<Path, std::vector<Path>, std::greater<Path>> pq{};
+    std::vector<Path> confirmed_paths{};
+    pq.push(std::move(path));
 
     for (int i = 0; i < k && !pq.empty(); ++i) {
         while (pq.size() > 0) {
-            const auto& top_edges = pq.top()->edge_indices;
+            const auto& top_edges = pq.top().edge_indices;
             bool is_new = std::none_of(confirmed_paths.begin(), confirmed_paths.end(),
-                [&top_edges](const std::shared_ptr<Path>& p) {
-                    return p->edge_indices == top_edges;
+                [&top_edges](const auto& p) {
+                    return p.edge_indices == top_edges;
                 });
 
             if (is_new) break;
             else pq.pop();
         }
 
-        std::shared_ptr<Path> best = pq.top();
-        confirmed_paths.push_back(best);
-        pq.pop();
-
-        if (i == k - 1) {
+        if (i == k - 1 || pq.empty()) {
             break;
         }
 
         std::vector<std::size_t> root_path_edges{};
         double root_latency = 0;
 
-        for (auto edge_id : best->edge_indices) {
+        confirmed_paths.push_back(std::move(pq.top()));
+        pq.pop();
+
+        for (auto edge_id : confirmed_paths[i].edge_indices) {
             auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
             disable_edges(confirmed_paths, root_path_edges);
-            std::shared_ptr<Path> spur_path = dijkstra(spur_node, dest);
+            Path spur_path = dijkstra(spur_node, dest);
 
-            if (spur_path) {
-                auto total_path = std::make_shared<Path>();
-                total_path->edge_indices = root_path_edges;
-                total_path->edge_indices.insert(total_path->edge_indices.end(), spur_path->edge_indices.begin(), spur_path->edge_indices.end());
-                total_path->total_latency = root_latency + spur_path->total_latency;
+            if (!spur_path.edge_indices.empty()) {
+                Path total_path = {};
+                total_path.edge_indices = root_path_edges;
+                total_path.edge_indices.insert(total_path.edge_indices.end(), spur_path.edge_indices.begin(), spur_path.edge_indices.end());
+                total_path.total_latency = root_latency + spur_path.total_latency;
 
-                pq.push(total_path);
+                pq.push(std::move(total_path));
             }
 
             root_path_edges.push_back(edge_id);
@@ -79,7 +75,7 @@ std::vector<std::shared_ptr<KShortestPathFinder::Path>> KShortestPathFinder::fin
     return confirmed_paths;
 }
 
-std::shared_ptr<KShortestPathFinder::Path> KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
+KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
     std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
     std::vector<const HFT::Edge*> parent_edge_id_buffer(m_graph.get_num_nodes(), nullptr);
     std::vector<double> min_latency_buffer(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
@@ -119,23 +115,22 @@ std::shared_ptr<KShortestPathFinder::Path> KShortestPathFinder::dijkstra(std::si
         return {};
     }
 
-    auto path{ std::make_unique<Path>() };
     const HFT::Edge* cur_edge{ parent_edge_id_buffer[dest] };
+    Path path{};
 
     while (cur_edge) {
-        path->edge_indices.push_back(cur_edge->id);
-        path->total_latency += cur_edge->latency;
+        path.edge_indices.push_back(cur_edge->id);
+        path.total_latency += cur_edge->latency;
         cur_edge = parent_edge_id_buffer[cur_edge->source];
     }
 
-    std::reverse(path->edge_indices.begin(), path->edge_indices.end());
+    std::reverse(path.edge_indices.begin(), path.edge_indices.end());
     return path;
 }
 
-void KShortestPathFinder::disable_edges(const std::vector<std::shared_ptr<Path>>& confirmed_paths, 
-                                        const std::vector<std::size_t>& root_edges) {
-    for (auto& path : confirmed_paths) {
-        const auto& edges = path->edge_indices;
+void KShortestPathFinder::disable_edges(const std::vector<Path>& confirmed_paths, const std::vector<std::size_t>& root_edges) {
+    for (const auto& path : confirmed_paths) {
+        const auto& edges = path.edge_indices;
         if (edges.size() <= root_edges.size()) {
             continue;
         }

@@ -8,14 +8,13 @@
 
 #include "utils/selection_evaluator.h"
 #include "types/expected_requests.h"
+#include "types/chromosome.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
 #include "solvers/solver.h"
 
 class LinkBasedGASolver : public Solver {
 public:
-    using Chromosome = std::vector<std::uint64_t>;
-    
     LinkBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
@@ -27,8 +26,8 @@ protected:
     virtual double get_random_double(double min, double max);
 
     std::vector<std::size_t> stochastic_universal_sampling(const std::vector<double>& pop_fitness);
-    void crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx);
-    void mutate(Chromosome& offspring);
+    void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2, int start_idx, int end_idx);
+    void mutate(HFT::Chromosome& offspring);
 
 private:
     void build_initial_population();
@@ -38,8 +37,8 @@ private:
 
     std::uniform_int_distribution<int> m_crossover_dist;
 
-    std::vector<Chromosome> m_cur_pop_buffer;
-    std::vector<Chromosome> m_next_pop_buffer;
+    std::vector<HFT::Chromosome> m_cur_pop_buffer;
+    std::vector<HFT::Chromosome> m_next_pop_buffer;
     
     double m_best_profit{ std::numeric_limits<double>::lowest() };
 
