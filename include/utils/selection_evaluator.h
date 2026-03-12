@@ -11,29 +11,18 @@ class SelectionEvaluator final {
 public:
     SelectionEvaluator(double max_latency, const HFT::Graph& graph, const HFT::ExpectedRequests& requests);
 
-    double evaluate(const std::vector<uint64_t>& selected_edges);
+    double evaluate(const std::vector<std::uint64_t>& selected_edges);
 
 private:
     void reset();
 
     int update_path_flow(const HFT::Request& request, 
-                         const std::vector<uint64_t>& selected_edges,
+                         const std::vector<std::uint64_t>& selected_edges,
                          int remaining_orders);
 
     int process_orders(const HFT::Request& request, int remaining_orders);
 
-    bool edge_is_selected(std::size_t edge_index, const std::vector<uint64_t>& selected_edges) const;
-
-    struct State {
-        double latency;
-        std::size_t node_id;
-
-        State(double l, std::size_t id) : latency{ l }, node_id{ id } {}
-
-        bool operator>(const State& other) const {
-            return latency > other.latency;
-        }
-    };
+    bool edge_is_selected(std::size_t edge_index, const std::vector<std::uint64_t>& selected_edges) const;
 
     std::vector<const HFT::Edge*> m_parent_edge_buffer;
     std::vector<double> m_min_latency_buffer;

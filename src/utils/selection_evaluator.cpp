@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "types/expected_requests.h"
+#include "types/state.h"
 #include "types/graph.h"
 
 SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& graph, const HFT::ExpectedRequests& requests) 
@@ -23,7 +24,9 @@ void SelectionEvaluator::reset() {
     std::fill(m_parent_edge_buffer.begin(), m_parent_edge_buffer.end(), nullptr);
 }
 
-double SelectionEvaluator::evaluate(const std::vector<uint64_t>& selected_edges) {
+double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_edges) {
+    std::fill(m_path_flow.begin(), m_path_flow.end(), 0);
+
     std::size_t num_edges{ m_graph.get_num_edges() };
     double total_profit{ 0 };
 
@@ -34,7 +37,6 @@ double SelectionEvaluator::evaluate(const std::vector<uint64_t>& selected_edges)
             reset();
             
             if (processed_orders == 0) {
-                std::fill(m_path_flow.begin(), m_path_flow.end(), 0);
                 return std::numeric_limits<double>::lowest();
             }
             
@@ -64,16 +66,14 @@ double SelectionEvaluator::evaluate(const std::vector<uint64_t>& selected_edges)
 }
 
 int SelectionEvaluator::update_path_flow(const HFT::Request& request, 
-                                         const std::vector<uint64_t>& selected_edges, 
+                                         const std::vector<std::uint64_t>& selected_edges, 
                                          int remaining_orders) {
-    std::priority_queue<State, std::vector<State>, std::greater<State>> pq{};
-    std::size_t num_nodes{ m_graph.get_num_nodes() };
-
+    std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
     m_min_latency_buffer[request.server] = 0;
     pq.push({0, request.server});
 
     while (!pq.empty()) {
-        const State current = pq.top();
+        const HFT::State current = pq.top();
         pq.pop();
 
         if (current.node_id == request.exchange) {
@@ -129,6 +129,6 @@ int SelectionEvaluator::process_orders(const HFT::Request& request, int remainin
     return processed_orders;
 }
 
-bool SelectionEvaluator::edge_is_selected(std::size_t edge_index, const std::vector<uint64_t>& selected_edges) const {
+bool SelectionEvaluator::edge_is_selected(std::size_t edge_index, const std::vector<std::uint64_t>& selected_edges) const {
     return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
 }

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "types/ga_config.h"
+#include "types/path_based_ga_config.h"
 #include "types/milp_config.h"
 
 namespace HFT {
@@ -15,6 +16,7 @@ namespace HFT {
         double max_latency{};
 
         GAConfig ga{};
+        PathBasedGAConfig path_ga{};
         MILPConfig milp{};
     };
 }

@@ -18,7 +18,7 @@ std::unique_ptr<Solver> determine_solver(const HFT::Graph& graph, const HFT::Exp
     } else if (config.algorithm == "link-based-ga") {
         return std::make_unique<LinkBasedGASolver>(graph, requests, config.ga, config.max_latency);
     } else if (config.algorithm == "path-based-ga") {
-        return std::make_unique<PathBasedGASolver>(graph, requests, config.ga, config.max_latency);
+        return std::make_unique<PathBasedGASolver>(graph, requests, config.path_ga, config.max_latency);
     } else if (config.algorithm == "milp") {
         return std::make_unique<MILPSolver>(graph, requests, config.milp, config.max_latency);
     } else {
