@@ -10,7 +10,6 @@
 #include "solvers/solver.h"
 #include "types/expected_requests.h"
 #include "types/path_based_ga_config.h"
-#include "types/chromosome.h"
 #include "types/graph.h"
 #include "utils/k_shortest_path_finder.h"
 
@@ -19,7 +18,7 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
                                      const HFT::PathBasedGAConfig& config,
                                      double max_latency)
 : Solver{ graph, requests, max_latency }
-, m_cur_pop_buffer(config.population_size, HFT::Chromosome(requests.size()))
+, m_cur_pop_buffer(config.population_size, Chromosome(requests.size()))
 , m_path_pool(requests.size())
 , m_ksp_finder{ graph }
 , m_config{ config }
@@ -33,7 +32,10 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
 
 double PathBasedGASolver::solve() {
     build_initial_population();
-    reproduce();
+    for (int i = 0; i < m_config.generations; ++i) {
+        reproduce();
+    }
+
     return m_best_profit;
 }
 
@@ -44,6 +46,70 @@ void PathBasedGASolver::build_initial_population() {
     initialise_greedy_group(0, greedy_end);
     initialise_edge_sharing_group(greedy_end, arc_end);
     initialise_random_group(arc_end, m_config.population_size);
+}
+
+std::vector<double> PathBasedGASolver::get_population_fitness() {
+    std::vector<double> pop_fitness(m_config.population_size, 0.0);
+
+    for (std::size_t i = 0; i < m_config.population_size; ++i) {
+        double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
+        if (fitness > m_best_profit) {
+            m_best_profit = fitness;
+        }
+
+        pop_fitness[i] = fitness;
+    }
+
+    return pop_fitness;
+}
+
+double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+    std::set<std::size_t> global_edge_usage{};
+    double total_profit{ 0.0 };
+
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
+        const auto& request = m_requests[i];
+        int remaining_orders = request.num_orders;
+        double request_profit = request.max_order_profit * request.num_orders;
+
+        std::vector<int> path_flow(m_graph.get_num_edges(), 0);
+        std::set<std::size_t> used_edges{};
+        std::uint64_t mask = 1ULL;
+
+        for (int j = 0; j < m_path_pool[i].size(); ++j) {
+            if ((chromosome[i] & mask) > 0) {
+                double path_penalty = get_path_penalty(m_path_pool[i][j], request, remaining_orders, path_flow, used_edges);
+                request_profit -= path_penalty;
+            }
+
+            mask <<= 1;
+        }
+
+        if (remaining_orders > 0) {
+            return std::numeric_limits<double>::lowest();
+        } else {
+            total_profit += request_profit;
+        }
+
+        global_edge_usage.insert(used_edges.begin(), used_edges.end());
+    }
+
+    for (auto edge_id : global_edge_usage) {
+        total_profit -= m_graph.get_edge(edge_id).lease_cost;
+    }
+
+    return total_profit;
+}
+
+void PathBasedGASolver::mutate(Chromosome& offspring) {
+    // mutate the chromosome
+}
+
+void PathBasedGASolver::reproduce() {
+    std::vector<double> population_fitness{ get_population_fitness() };
+    for (auto val : population_fitness) {
+        std::cout << val << '\n';
+    }
 }
 
 void PathBasedGASolver::initialise_greedy_group(std::size_t start_idx, std::size_t end_idx) {
@@ -110,44 +176,6 @@ void PathBasedGASolver::initialise_random_group(std::size_t start_idx, std::size
     }
 }
 
-double PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
-    std::set<std::size_t> global_edge_usage{};
-    double total_profit{ 0.0 };
-
-    for (std::size_t i = 0; i < m_requests.size(); ++i) {
-        const auto& request = m_requests[i];
-        int remaining_orders = request.num_orders;
-        double request_profit = request.max_order_profit * request.num_orders;
-
-        std::vector<int> path_flow(m_graph.get_num_edges(), 0);
-        std::set<std::size_t> used_edges{};
-        std::uint64_t mask = 1ULL;
-
-        for (int j = 0; j < m_path_pool[i].size(); ++j) {
-            if ((chromosome[i] & mask) > 0) {
-                double path_penalty = get_path_penalty(m_path_pool[i][j], request, remaining_orders, path_flow, used_edges);
-                request_profit -= path_penalty;
-            }
-
-            mask <<= 1;
-        }
-
-        if (remaining_orders > 0) {
-            return std::numeric_limits<double>::lowest();
-        } else {
-            total_profit += request_profit;
-        }
-
-        global_edge_usage.insert(used_edges.begin(), used_edges.end());
-    }
-
-    for (auto edge_id : global_edge_usage) {
-        total_profit -= m_graph.get_edge(edge_id).lease_cost;
-    }
-
-    return total_profit;
-}
-
 double PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
                                            const HFT::Request& request, 
                                            int& remaining_orders, 
@@ -179,17 +207,4 @@ double PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path
 
     remaining_orders -= processed_orders;
     return path_penalty;
-}
-
-void PathBasedGASolver::reproduce() {
-    std::vector<double> population_fitness{};
-
-    std::transform(m_cur_pop_buffer.begin(), m_cur_pop_buffer.end(), std::back_inserter(population_fitness), 
-        [this](const auto& chromosome) {
-            return get_chromosome_fitness(chromosome);
-        });
-
-    for (auto fitness : population_fitness) {
-        std::cout << fitness << '\n';
-    }
 }

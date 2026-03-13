@@ -21,8 +21,8 @@ LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph,
                                      double max_latency)
 : Solver{ graph, requests, max_latency }
 , m_crossover_dist(0, graph.get_num_edges() - 1)
-, m_cur_pop_buffer(config.population_size, HFT::Chromosome(graph.get_num_edges() / 64 + 1))
-, m_next_pop_buffer(config.population_size, HFT::Chromosome(graph.get_num_edges() / 64 + 1))
+, m_cur_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
+, m_next_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
 , m_config{ config } {
     warm_cache();
 }
@@ -64,7 +64,7 @@ std::vector<std::size_t> LinkBasedGASolver::stochastic_universal_sampling(const 
     return selected_parents;
 }
 
-void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2, int start_idx, int end_idx) {
+void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
     if (start_idx > end_idx) {
         return;
     }
@@ -85,7 +85,7 @@ void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& par
     }
 }
 
-void LinkBasedGASolver::mutate(HFT::Chromosome& offspring) {
+void LinkBasedGASolver::mutate(Chromosome& offspring) {
     std::geometric_distribution<std::size_t> skip_dist(m_config.mutation_rate);
 
     std::size_t total_bits = offspring.size() * 64;
@@ -112,7 +112,7 @@ void LinkBasedGASolver::build_initial_population() {
         }
     }
 
-    HFT::Chromosome random(num_edges / 64 + 1);
+    Chromosome random(num_edges / 64 + 1);
     for (std::size_t j = 0; j < num_edges; ++j) {
         if (get_random_double(0.0, 1.0) < 0.5) {
             random[j / 64] |= (1ULL << (j % 64));
@@ -127,11 +127,9 @@ std::vector<double> LinkBasedGASolver::get_population_fitness() {
 
     #pragma omp parallel
     {
-        SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
-
         #pragma omp for reduction(max:m_best_profit)
         for (std::size_t i = 0; i < m_config.population_size; ++i) {
-            double fitness = evaluator.evaluate(m_cur_pop_buffer[i]);
+            double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
             if (fitness > m_best_profit) {
                 m_best_profit = fitness;
             }
@@ -141,6 +139,11 @@ std::vector<double> LinkBasedGASolver::get_population_fitness() {
     }
 
     return pop_fitness;
+}
+
+double LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+    static thread_local SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
+    return evaluator.evaluate(chromosome);
 }
 
 void LinkBasedGASolver::reproduce() {

@@ -6,8 +6,8 @@
 #include "solvers/link_based_ga_solver.h"
 #include "types/config.h"
 #include "types/expected_requests.h"
-#include "types/chromosome.h"
 #include "types/graph.h"
+#include "interfaces/i_genetic.h"
 
 class LinkBasedGASolverTest : public LinkBasedGASolver, public testing::Test {
 protected:
@@ -32,7 +32,7 @@ private:
 };
 
 TEST_F(LinkBasedGASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
-    HFT::Chromosome c{ 0b1011101101ULL }; 
+    Chromosome c{ 0b1011101101ULL }; 
     std::uint64_t original_val{ c[0] };
 
     set_random_double_prob(0.9);
@@ -42,7 +42,7 @@ TEST_F(LinkBasedGASolverTest, MutationDoesNothingWhenRandomValueIsHigh) {
 }
 
 TEST_F(LinkBasedGASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
-    HFT::Chromosome c{ 0ULL }; 
+    Chromosome c{ 0ULL }; 
     mutate(c);
 
     std::uint64_t expected{ ~0ULL };
@@ -50,11 +50,11 @@ TEST_F(LinkBasedGASolverTest, MutationFlipsAllBitsWhenRandomValueIsLow) {
 }
 
 TEST_F(LinkBasedGASolverTest, CrossoverSwapsMiddleSegment) {
-    HFT::Chromosome p1{ 0, ~0ULL, 0 };
-    HFT::Chromosome p2{ ~0ULL, 0, ~0ULL };
+    Chromosome p1{ 0, ~0ULL, 0 };
+    Chromosome p2{ ~0ULL, 0, ~0ULL };
 
-    HFT::Chromosome expected_p1{ 0, 0, 0 };
-    HFT::Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
+    Chromosome expected_p1{ 0, 0, 0 };
+    Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
 
     crossover(p1, p2, 64, 127);
 
@@ -63,11 +63,11 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsMiddleSegment) {
 }
 
 TEST_F(LinkBasedGASolverTest, CrossoverSwapsSingleBits) {
-    HFT::Chromosome p1{ 1 };
-    HFT::Chromosome p2{ 0 };
+    Chromosome p1{ 1 };
+    Chromosome p2{ 0 };
 
-    HFT::Chromosome expected_p1{ 0 };
-    HFT::Chromosome expected_p2{ 1 };
+    Chromosome expected_p1{ 0 };
+    Chromosome expected_p2{ 1 };
 
     crossover(p1, p2, 0, 0);
 
@@ -76,11 +76,11 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsSingleBits) {
 }
 
 TEST_F(LinkBasedGASolverTest, CrossoverSwapsAllBits) {
-    HFT::Chromosome p1{ ~0ULL, ~0ULL, ~0ULL };
-    HFT::Chromosome p2{ 0, 0, 0 };
+    Chromosome p1{ ~0ULL, ~0ULL, ~0ULL };
+    Chromosome p2{ 0, 0, 0 };
 
-    HFT::Chromosome expected_p1{ 0, 0, 0 };
-    HFT::Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
+    Chromosome expected_p1{ 0, 0, 0 };
+    Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
 
     crossover(p1, p2, 0, 191);
 
