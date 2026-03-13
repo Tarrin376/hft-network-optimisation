@@ -7,30 +7,29 @@
 #include <limits>
 #include <set>
 
-#include "solvers/solver.h"
+#include "types/solver.h"
 #include "types/expected_requests.h"
-#include "types/path_based_ga_config.h"
+#include "types/ga_config.h"
 #include "types/graph.h"
-#include "interfaces/i_genetic.h"
+#include "types/ga_solver.h"
 #include "utils/k_shortest_path_finder.h"
 
-class PathBasedGASolver : public IGenetic, public Solver {
+class PathBasedGASolver : public GASolver {
 public:
     using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
 
     PathBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
-                      const HFT::PathBasedGAConfig& config,
-                      double max_latency);
-    
-    double solve() override;
+                      const HFT::GAConfig& config,
+                      double max_latency,
+                      int k);
 
 private:
     void build_initial_population() override;
-    std::vector<double> get_population_fitness() override;
     double get_chromosome_fitness(const Chromosome& chromosome) override;
     void mutate(Chromosome& offspring) override;
-    void reproduce() override;
+    void crossover(Chromosome& parent1, Chromosome& parent2) override;
+    void warm_cache() override;
     
     void initialise_greedy_group(std::size_t start_idx, std::size_t end_idx);
     void initialise_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
@@ -42,15 +41,11 @@ private:
                             std::vector<int>& path_flow,
                             std::set<std::size_t>& used_edges);
 
-    std::vector<Chromosome> m_cur_pop_buffer;
-
     PathPool m_path_pool;
     KShortestPathFinder m_ksp_finder;
 
-    HFT::PathBasedGAConfig m_config{};
-    std::mt19937 m_gen{};
+    std::uniform_int_distribution<int> m_anchor_dist;
 
-    double m_best_profit{ std::numeric_limits<double>::lowest() };
     const double GREEDY_GROUP_PERC{ 0.25 };
     const double EDGE_SHARING_GROUP_PERC{ 0.5 };
 };

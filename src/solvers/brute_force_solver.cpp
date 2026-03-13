@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "solvers/solver.h"
+#include "types/solver.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"
 

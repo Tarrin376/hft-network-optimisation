@@ -10,7 +10,7 @@
 #include "types/expected_requests.h"
 #include "types/milp_config.h"
 #include "types/graph.h"
-#include "solvers/solver.h"
+#include "types/solver.h"
 
 namespace or_tools = operations_research;
 

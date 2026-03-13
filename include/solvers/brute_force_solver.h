@@ -7,7 +7,7 @@
 #include "utils/selection_evaluator.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"
-#include "solvers/solver.h"
+#include "types/solver.h"
 
 class BruteForceSolver : public Solver {
 public:

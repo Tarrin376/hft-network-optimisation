@@ -4,7 +4,7 @@
 #include <benchmark/benchmark.h>
 
 #include "utils/graph_generator.h"
-#include "solvers/link_based_ga_solver.h"
+#include "solvers/path_based_ga_solver.h"
 #include "types/graph_gen_config.h"
 #include "types/graph.h"
 
@@ -14,24 +14,24 @@ static void BM_GraphGen(benchmark::State& state) {
             .max_latency = 20.5,
             .max_rate_limit = 4,
             .max_lease_cost = 300,
-            .num_nodes = 17,
-            .num_edges = 70,
-            .num_servers = 1
+            .num_nodes = 1000,
+            .num_edges = 10000,
+            .num_servers = 35
         };
 
         HFT::ExpectedRequests requests{};
         requests.push_back({ 
-            .server = 4, 
-            .exchange = 14, 
+            .server = 67, 
+            .exchange = 567, 
             .num_orders = 12, 
-            .planning_horizon = 3, 
+            .planning_horizon = 7, 
             .max_order_profit = 3000 
         });
 
         GraphGenerator generator{ config };
         const HFT::Graph& graph{ generator.generate() };
 
-        LinkBasedGASolver solver{ graph, requests, {}, 20.5 };
+        PathBasedGASolver solver{ graph, requests, {}, 20.5, 64 };
         double total_profit { solver.solve() };
         std::cout << "Total profit: " << total_profit << '\n';
     }

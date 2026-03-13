@@ -13,61 +13,27 @@
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
-#include "solvers/solver.h"
+#include "types/solver.h"
 
 LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph, 
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
                                      double max_latency)
-: Solver{ graph, requests, max_latency }
-, m_crossover_dist(0, graph.get_num_edges() - 1)
-, m_cur_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
-, m_next_pop_buffer(config.population_size, Chromosome(graph.get_num_edges() / 64 + 1))
-, m_config{ config } {
+: GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() / 64) + 1 }
+, m_crossover_dist(0, graph.get_num_edges() - 1) {
     warm_cache();
 }
 
-double LinkBasedGASolver::solve() {
-    build_initial_population();
-    for (int i = 0; i < m_config.generations; ++i) {
-        reproduce();
-    }
-
-    return m_best_profit;
-}
-
-double LinkBasedGASolver::get_random_double(double min, double max) {
-    std::uniform_real_distribution<double> dist(min, max);
-    return dist(get_gen());
-}
-
-std::vector<std::size_t> LinkBasedGASolver::stochastic_universal_sampling(const std::vector<double>& pop_fitness) {
-    std::vector<std::size_t> selected_parents(m_config.population_size, 0);
-    double total{ std::accumulate(pop_fitness.begin(), pop_fitness.end(), 0.0) };
-
-    const double step{ total / static_cast<double>(m_config.population_size) };
-    double cumulative{ pop_fitness[0] };
-
-    double pointer{ get_random_double(0.0, step) };
-    std::size_t idx{ 0 };
-
-    for (std::size_t i = 0; i < m_config.population_size; ++i) {
-        while (pointer > cumulative) {
-            ++idx;
-            cumulative += pop_fitness[idx];
-        }
-
-        selected_parents[i] = idx;
-        pointer += step;
-    }
-
-    return selected_parents;
-}
-
-void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2, int start_idx, int end_idx) {
-    if (start_idx > end_idx) {
+void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
+    if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
         return;
     }
+    
+    int start{ m_crossover_dist(get_gen()) };
+    int end{ m_crossover_dist(get_gen()) };
+
+    int start_idx{ std::min(start, end) };
+    int end_idx{ std::max(start, end) };
 
     int start_block{ start_idx / 64 };
     int end_block{ end_idx / 64 };
@@ -122,53 +88,9 @@ void LinkBasedGASolver::build_initial_population() {
     m_cur_pop_buffer.back() = std::move(random);
 }
 
-std::vector<double> LinkBasedGASolver::get_population_fitness() {
-    std::vector<double> pop_fitness(m_config.population_size, 0.0);
-
-    #pragma omp parallel
-    {
-        #pragma omp for reduction(max:m_best_profit)
-        for (std::size_t i = 0; i < m_config.population_size; ++i) {
-            double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
-            if (fitness > m_best_profit) {
-                m_best_profit = fitness;
-            }
-
-            pop_fitness[i] = std::max(fitness, 0.0);
-        }
-    }
-
-    return pop_fitness;
-}
-
 double LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
     static thread_local SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
     return evaluator.evaluate(chromosome);
-}
-
-void LinkBasedGASolver::reproduce() {
-    std::vector<double> pop_fitness{ get_population_fitness() };
-    std::vector<std::size_t> selected_parents{ stochastic_universal_sampling(pop_fitness) };
-
-    #pragma omp parallel for
-    for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-        m_next_pop_buffer[i] = m_cur_pop_buffer[selected_parents[i]];
-        m_next_pop_buffer[i + 1] = m_cur_pop_buffer[selected_parents[i + 1]];
-
-        auto& parent1 = m_next_pop_buffer[i];
-        auto& parent2 = m_next_pop_buffer[i + 1];
-        
-        if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
-            int start{ m_crossover_dist(get_gen()) };
-            int end{ m_crossover_dist(get_gen()) };
-            crossover(parent1, parent2, std::min(start, end), std::max(start, end));
-        }
-
-        mutate(parent1);
-        mutate(parent2);
-    }
-
-    std::swap(m_cur_pop_buffer, m_next_pop_buffer);
 }
 
 void LinkBasedGASolver::warm_cache() {
@@ -190,11 +112,6 @@ void LinkBasedGASolver::warm_cache() {
             dummy_sum += node.outgoing_edges[0];
         }
     }
-}
-
-std::mt19937& LinkBasedGASolver::get_gen() {
-    static thread_local std::mt19937 generator{ m_config.seed };
-    return generator;
 }
 
 #endif

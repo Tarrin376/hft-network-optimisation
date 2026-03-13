@@ -115,6 +115,8 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
             config.milp.solver_id = argv[++i];
         } else if (arg == "--seed") {
             config.ga.seed = std::stoull(argv[++i]);
+        } else if (arg == "-k") {
+            config.k = std::stoull(argv[++i]);
         }
     }
 

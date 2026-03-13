@@ -7,7 +7,6 @@
 #include "types/config.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"
-#include "interfaces/i_genetic.h"
 
 class LinkBasedGASolverTest : public LinkBasedGASolver, public testing::Test {
 protected:
@@ -56,7 +55,7 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsMiddleSegment) {
     Chromosome expected_p1{ 0, 0, 0 };
     Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
 
-    crossover(p1, p2, 64, 127);
+    crossover(p1, p2);
 
     EXPECT_EQ(p1, expected_p1);
     EXPECT_EQ(p2, expected_p2);
@@ -69,7 +68,7 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsSingleBits) {
     Chromosome expected_p1{ 0 };
     Chromosome expected_p2{ 1 };
 
-    crossover(p1, p2, 0, 0);
+    crossover(p1, p2);
 
     EXPECT_EQ(p1, expected_p1);
     EXPECT_EQ(p2, expected_p2);
@@ -82,35 +81,35 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsAllBits) {
     Chromosome expected_p1{ 0, 0, 0 };
     Chromosome expected_p2{ ~0ULL, ~0ULL, ~0ULL };
 
-    crossover(p1, p2, 0, 191);
+    crossover(p1, p2);
 
     EXPECT_EQ(p1, expected_p1);
     EXPECT_EQ(p2, expected_p2);
 }
 
 TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
-    std::vector<double> population_fitness{ 6, 2, 2 };
+    std::vector<double> pop_fitness{ 6, 2, 2 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 1 };
-    std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
 
     EXPECT_EQ(ans, expected_ans);
 }
 
 TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
-    std::vector<double> population_fitness{ 6, 0, 4 };
+    std::vector<double> pop_fitness{ 6, 0, 4 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 2 };
-    std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
 
     EXPECT_EQ(ans, expected_ans);
 }
 
 TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
-    std::vector<double> population_fitness{ 4.2, 3.6, 2.2 };
+    std::vector<double> pop_fitness{ 4.2, 3.6, 2.2 };
 
     std::vector<std::size_t> expected_ans{ 0, 0, 0, 1, 2 };
-    std::vector<std::size_t> ans{ stochastic_universal_sampling(population_fitness) };
+    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
 
     EXPECT_EQ(ans, expected_ans);
 }
