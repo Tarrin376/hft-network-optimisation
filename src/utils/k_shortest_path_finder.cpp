@@ -12,7 +12,9 @@
 #include "types/state.h"
 
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
-    : m_graph{ graph } {}
+    : m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
+    , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
+    , m_graph{ graph } {}
 
 std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
     Path path{ dijkstra(source, dest) };
@@ -47,7 +49,7 @@ std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size
         pq.pop();
 
         for (auto edge_id : confirmed_paths[i].edge_indices) {
-            auto& edge = m_graph.get_edge(edge_id);
+            const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
             disable_edges(confirmed_paths, root_path_edges);
@@ -77,10 +79,10 @@ std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size
 
 KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
     std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
-    std::vector<const HFT::Edge*> parent_edge_id_buffer(m_graph.get_num_nodes(), nullptr);
-    std::vector<double> min_latency_buffer(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
+    m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
+    m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
 
-    min_latency_buffer[source] = 0;
+    m_min_latency_buffer[source] = 0;
     pq.push({0, source});
 
     while (!pq.empty()) {
@@ -91,7 +93,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
             break;
         }
 
-        if (current.latency > min_latency_buffer[current.node_id]) {
+        if (current.latency > m_min_latency_buffer[current.node_id]) {
             continue;
         }
 
@@ -103,25 +105,25 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
             }
 
             double new_latency = current.latency + edge.latency;
-            if (new_latency < min_latency_buffer[edge.dest]) {
-                min_latency_buffer[edge.dest] = new_latency;
-                parent_edge_id_buffer[edge.dest] = &edge;
+            if (new_latency < m_min_latency_buffer[edge.dest]) {
+                m_min_latency_buffer[edge.dest] = new_latency;
+                m_parent_edge_buffer[edge.dest] = &edge;
                 pq.emplace(new_latency, edge.dest);
             }
         }
     }
 
-    if (!parent_edge_id_buffer[dest]) {
+    if (!m_parent_edge_buffer[dest]) {
         return {};
     }
 
-    const HFT::Edge* cur_edge{ parent_edge_id_buffer[dest] };
+    const HFT::Edge* cur_edge{ m_parent_edge_buffer[dest] };
     Path path{};
 
     while (cur_edge) {
         path.edge_indices.push_back(cur_edge->id);
         path.total_latency += cur_edge->latency;
-        cur_edge = parent_edge_id_buffer[cur_edge->source];
+        cur_edge = m_parent_edge_buffer[cur_edge->source];
     }
 
     std::reverse(path.edge_indices.begin(), path.edge_indices.end());

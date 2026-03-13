@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
-#include <set>
+#include <unordered_set>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -41,15 +41,15 @@ void PathBasedGASolver::build_initial_population() {
 }
 
 double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
-    std::set<std::size_t> used_edges{};
+    std::vector<int> path_flow(m_graph.get_num_edges(), 0);
+    std::unordered_set<std::size_t> used_edges{};
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& request = m_requests[i];
         int remaining_orders = request.num_orders;
-        double request_profit = request.max_order_profit * request.num_orders;
 
-        std::vector<int> path_flow(m_graph.get_num_edges(), 0);
+        double request_profit = request.max_order_profit * request.num_orders;
         std::uint64_t mask = 1ULL;
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
@@ -67,6 +67,8 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         } else {
             total_profit += request_profit;
         }
+
+        path_flow.assign(path_flow.size(), 0);
     }
 
     for (auto edge_id : used_edges) {
@@ -126,7 +128,7 @@ void PathBasedGASolver::initialise_edge_sharing_group(std::size_t start_idx, std
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         int anchor_req = m_anchor_dist(get_gen());
         const auto& backbone = m_path_pool[anchor_req][0]; 
-        std::set<std::size_t> backbone_edges(backbone.edge_indices.begin(), backbone.edge_indices.end());
+        std::unordered_set<std::size_t> backbone_edges(backbone.edge_indices.begin(), backbone.edge_indices.end());
 
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
             std::size_t best_path_idx = 0;
@@ -135,7 +137,7 @@ void PathBasedGASolver::initialise_edge_sharing_group(std::size_t start_idx, std
             for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
                 int current_overlap = 0;
                 for (const auto& edge : m_path_pool[j][k].edge_indices) {
-                    if (backbone_edges.count(edge)) {
+                    if (backbone_edges.contains(edge)) {
                         current_overlap++;
                     }
                 }
@@ -170,19 +172,14 @@ void PathBasedGASolver::initialise_random_group(std::size_t start_idx, std::size
 PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
                                                                    const HFT::Request& request, 
                                                                    std::vector<int>& path_flow,
-                                                                   std::set<std::size_t>& used_edges,
+                                                                   std::unordered_set<std::size_t>& used_edges,
                                                                    int remaining_orders) {
-    const double horizon = request.planning_horizon;
+    int bottleneck_capacity{ std::numeric_limits<int>::max() };
 
-    int bottleneck_capacity = std::accumulate(
-        path.edge_indices.begin(), 
-        path.edge_indices.end(),
-        std::numeric_limits<int>::max(),
-        [this, horizon, &path_flow](int current_min, std::size_t edge_id) {
-            int edge_capacity = m_graph.get_edge(edge_id).rate_limit * horizon - path_flow[edge_id];
-            return std::min(current_min, edge_capacity);
-        }
-    );
+    for (auto edge_id : path.edge_indices) {
+        int edge_capacity = m_graph.get_edge(edge_id).rate_limit * request.planning_horizon - path_flow[edge_id];
+        bottleneck_capacity = std::min(bottleneck_capacity, edge_capacity);
+    }
 
     int processed_orders = std::min(bottleneck_capacity, remaining_orders);
     double path_penalty{ 0.0 };
@@ -200,5 +197,26 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
 }
 
 void PathBasedGASolver::warm_cache() {
-    // do some cache warming here
+    // 'volatile' prevents the compiler from optimising the loop away
+    volatile double sum_warm{ 0 };
+
+    for (const auto& req : m_requests) {
+        sum_warm += req.num_orders + req.server;
+    }
+
+    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
+        const auto& edge = m_graph.get_edge(i);
+        sum_warm += edge.latency + edge.rate_limit;
+    }
+
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
+        for (std::size_t j = 0; j < m_path_pool[i].size(); ++j) {
+            KShortestPathFinder::Path& path = m_path_pool[i][j];
+            sum_warm += path.total_latency;
+
+            for (auto edge_id : path.edge_indices) {
+                sum_warm += edge_id;
+            }
+        }
+    }
 }

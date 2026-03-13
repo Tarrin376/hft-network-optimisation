@@ -29,11 +29,11 @@ void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
         return;
     }
     
-    int start{ m_crossover_dist(get_gen()) };
-    int end{ m_crossover_dist(get_gen()) };
+    int first_rand_idx{ m_crossover_dist(get_gen()) };
+    int second_rand_idx{ m_crossover_dist(get_gen()) };
 
-    int start_idx{ std::min(start, end) };
-    int end_idx{ std::max(start, end) };
+    int start_idx{ std::min(first_rand_idx, second_rand_idx) };
+    int end_idx{ std::max(first_rand_idx, second_rand_idx) };
 
     int start_block{ start_idx / 64 };
     int end_block{ end_idx / 64 };

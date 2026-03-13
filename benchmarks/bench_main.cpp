@@ -4,7 +4,7 @@
 #include <benchmark/benchmark.h>
 
 #include "utils/graph_generator.h"
-#include "solvers/path_based_ga_solver.h"
+#include "solvers/milp_solver.h"
 #include "types/graph_gen_config.h"
 #include "types/graph.h"
 
@@ -31,7 +31,7 @@ static void BM_GraphGen(benchmark::State& state) {
         GraphGenerator generator{ config };
         const HFT::Graph& graph{ generator.generate() };
 
-        PathBasedGASolver solver{ graph, requests, {}, 20.5, 64 };
+        MILPSolver solver{ graph, requests, { "CP-SAT" }, 20.5 };
         double total_profit { solver.solve() };
         std::cout << "Total profit: " << total_profit << '\n';
     }

@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstdint>
 #include <vector>
-#include <set>
+#include <unordered_set>
 
 #include "types/graph.h"
 
@@ -29,8 +29,11 @@ public:
 
 private:
     const HFT::Graph& m_graph;
-    std::set<std::size_t> m_disabled_edges;
-    std::set<std::size_t> m_disabled_nodes;
+    std::unordered_set<std::size_t> m_disabled_edges;
+    std::unordered_set<std::size_t> m_disabled_nodes;
+
+    std::vector<double> m_min_latency_buffer;
+    std::vector<const HFT::Edge*> m_parent_edge_buffer;
 
     Path dijkstra(std::size_t source, std::size_t dest);
 

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <random>
 #include <limits>
-#include <set>
+#include <unordered_set>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -43,7 +43,7 @@ private:
     PathPenalty get_path_penalty(const KShortestPathFinder::Path& path, 
                                  const HFT::Request& request,
                                  std::vector<int>& path_flow,
-                                 std::set<std::size_t>& used_edges,
+                                 std::unordered_set<std::size_t>& used_edges,
                                  int remaining_orders);
 
     PathPool m_path_pool;

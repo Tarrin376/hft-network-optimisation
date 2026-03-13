@@ -1,7 +1,6 @@
 #include "utils/selection_evaluator.h"
 
 #include <functional>
-#include <algorithm>
 #include <cstdint>
 #include <vector>
 #include <queue>
@@ -20,12 +19,12 @@ SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& gra
 , m_requests{ requests } {}
 
 void SelectionEvaluator::reset() {
-    std::fill(m_min_latency_buffer.begin(), m_min_latency_buffer.end(), std::numeric_limits<double>::max());
-    std::fill(m_parent_edge_buffer.begin(), m_parent_edge_buffer.end(), nullptr);
+    m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
+    m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
 }
 
 double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_edges) {
-    std::fill(m_path_flow.begin(), m_path_flow.end(), 0);
+    m_path_flow.assign(m_graph.get_num_edges(), 0);
 
     std::size_t num_edges{ m_graph.get_num_edges() };
     double total_profit{ 0 };
@@ -53,7 +52,7 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
         }
 
         total_profit += request_profit;
-        std::fill(m_path_flow.begin(), m_path_flow.end(), 0);
+        m_path_flow.assign(m_graph.get_num_edges(), 0);
     }
 
     for (std::size_t i = 0; i < num_edges; ++i) {
