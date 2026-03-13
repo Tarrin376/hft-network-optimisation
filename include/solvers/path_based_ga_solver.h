@@ -18,6 +18,11 @@ class PathBasedGASolver : public GASolver {
 public:
     using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
 
+    struct PathPenalty {
+        double penalty{};
+        int processed_orders{};
+    };
+
     PathBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
@@ -35,11 +40,11 @@ private:
     void initialise_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
     void initialise_random_group(std::size_t start_idx, std::size_t end_idx);
 
-    double get_path_penalty(const KShortestPathFinder::Path& path, 
-                            const HFT::Request& request, 
-                            int& remaining_orders, 
-                            std::vector<int>& path_flow,
-                            std::set<std::size_t>& used_edges);
+    PathPenalty get_path_penalty(const KShortestPathFinder::Path& path, 
+                                 const HFT::Request& request,
+                                 std::vector<int>& path_flow,
+                                 std::set<std::size_t>& used_edges,
+                                 int remaining_orders);
 
     PathPool m_path_pool;
     KShortestPathFinder m_ksp_finder;

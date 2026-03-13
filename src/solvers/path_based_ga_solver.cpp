@@ -41,7 +41,7 @@ void PathBasedGASolver::build_initial_population() {
 }
 
 double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
-    std::set<std::size_t> global_edge_usage{};
+    std::set<std::size_t> used_edges{};
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
@@ -50,13 +50,13 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         double request_profit = request.max_order_profit * request.num_orders;
 
         std::vector<int> path_flow(m_graph.get_num_edges(), 0);
-        std::set<std::size_t> used_edges{};
         std::uint64_t mask = 1ULL;
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
             if ((chromosome[i] & mask) > 0) {
-                double path_penalty = get_path_penalty(m_path_pool[i][j], request, remaining_orders, path_flow, used_edges);
-                request_profit -= path_penalty;
+                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining_orders);
+                remaining_orders -= path_penalty.processed_orders;
+                request_profit -= path_penalty.penalty;
             }
 
             mask <<= 1;
@@ -67,11 +67,9 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         } else {
             total_profit += request_profit;
         }
-
-        global_edge_usage.insert(used_edges.begin(), used_edges.end());
     }
 
-    for (auto edge_id : global_edge_usage) {
+    for (auto edge_id : used_edges) {
         total_profit -= m_graph.get_edge(edge_id).lease_cost;
     }
 
@@ -169,11 +167,11 @@ void PathBasedGASolver::initialise_random_group(std::size_t start_idx, std::size
     }
 }
 
-double PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
-                                           const HFT::Request& request, 
-                                           int& remaining_orders, 
-                                           std::vector<int>& path_flow,
-                                           std::set<std::size_t>& used_edges) {
+PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
+                                                                   const HFT::Request& request, 
+                                                                   std::vector<int>& path_flow,
+                                                                   std::set<std::size_t>& used_edges,
+                                                                   int remaining_orders) {
     const double horizon = request.planning_horizon;
 
     int bottleneck_capacity = std::accumulate(
@@ -198,8 +196,7 @@ double PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path
         path_penalty += penalty;
     }
 
-    remaining_orders -= processed_orders;
-    return path_penalty;
+    return { path_penalty, processed_orders };
 }
 
 void PathBasedGASolver::warm_cache() {
