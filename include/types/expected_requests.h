@@ -8,7 +8,6 @@ namespace HFT {
     struct Request {
         std::size_t server{};
         std::size_t exchange{};
-        std::size_t id{};
         int num_orders{};
         int planning_horizon{};
         int max_order_profit{};

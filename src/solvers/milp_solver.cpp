@@ -52,7 +52,7 @@ double MILPSolver::solve() {
             break;
         default:
             LOG(WARNING) << "The solver could not solve the problem.";
-            return 0.0;
+            return std::numeric_limits<double>::lowest();
     }
 
     double total_profit = m_objective_func->Value();
@@ -116,13 +116,13 @@ void MILPSolver::apply_flow_conservation_constraints() {
             const auto& node = m_graph.get_node(v);
 
             // Outgoing edges: sum(f_{i,a})
-            for (const auto& edge_idx : node.outgoing_edges) {
-                flow_con->SetCoefficient(m_flow_vars[i * m_graph.get_num_edges() + edge_idx], 1.0);
+            for (const auto& edge_id : node.outgoing_edges) {
+                flow_con->SetCoefficient(m_flow_vars[i * m_graph.get_num_edges() + edge_id], 1.0);
             }
 
             // Incoming edges: -sum(f_{i,a})
-            for (const auto& edge_idx : node.incoming_edges) {
-                flow_con->SetCoefficient(m_flow_vars[i * m_graph.get_num_edges() + edge_idx], -1.0);
+            for (const auto& edge_id : node.incoming_edges) {
+                flow_con->SetCoefficient(m_flow_vars[i * m_graph.get_num_edges() + edge_id], -1.0);
             }
         }
     }

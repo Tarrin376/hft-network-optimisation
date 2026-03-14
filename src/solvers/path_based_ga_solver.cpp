@@ -14,16 +14,11 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
                                      double max_latency,
-                                     int k)
+                                     int num_shortest_paths)
 : GASolver{ graph, requests, config, max_latency, requests.size() }
 , m_path_pool(requests.size())
-, m_ksp_finder{ graph }
 , m_anchor_dist(0, requests.size() - 1) {
-    for (const auto& request : m_requests) {
-        auto paths = m_ksp_finder.find_paths(request.server, request.exchange, std::min(k, 64));
-        m_path_pool[request.id] = std::move(paths);
-    }
-
+    initialise_path_pool(std::min(num_shortest_paths, 64));
     warm_cache();
 }
 
@@ -31,9 +26,9 @@ void PathBasedGASolver::build_initial_population() {
     int greedy_end{ static_cast<int>(GREEDY_GROUP_PERC * m_config.population_size) };
     int arc_end{ greedy_end + static_cast<int>(EDGE_SHARING_GROUP_PERC * m_config.population_size) };
 
-    initialise_greedy_group(0, greedy_end);
-    initialise_edge_sharing_group(greedy_end, arc_end);
-    initialise_random_group(arc_end, m_config.population_size);
+    build_greedy_group(0, greedy_end);
+    build_edge_sharing_group(greedy_end, arc_end);
+    build_random_group(arc_end, m_config.population_size);
 }
 
 double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
@@ -43,22 +38,22 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& request = m_requests[i];
-        int remaining = request.num_orders;
+        int remaining_orders = request.num_orders;
 
         double request_profit = request.max_order_profit * request.num_orders;
         std::uint64_t mask = 1ULL;
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
             if ((chromosome[i] & mask) > 0) {
-                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining);
-                remaining -= path_penalty.processed_orders;
+                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining_orders);
+                remaining_orders -= path_penalty.processed_orders;
                 request_profit -= path_penalty.penalty;
             }
 
             mask <<= 1;
         }
 
-        if (remaining > 0) {
+        if (remaining_orders > 0) {
             return std::numeric_limits<double>::lowest();
         } else {
             total_profit += request_profit;
@@ -109,7 +104,21 @@ void PathBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
     }
 }
 
-void PathBasedGASolver::initialise_greedy_group(std::size_t start_idx, std::size_t end_idx) {
+void PathBasedGASolver::initialise_path_pool(int num_shortest_paths) {
+    #pragma omp parallel 
+    {
+        KShortestPathFinder ksp_finder{ m_graph };
+
+        #pragma omp for
+        for (std::size_t i = 0; i < m_requests.size(); ++i) {
+            const auto& request = m_requests[i];
+            auto& paths = ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths);
+            m_path_pool[i] = std::move(paths);
+        }
+    }
+}
+
+void PathBasedGASolver::build_greedy_group(std::size_t start_idx, std::size_t end_idx) {
     #pragma omp parallel for
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
@@ -124,7 +133,7 @@ void PathBasedGASolver::initialise_greedy_group(std::size_t start_idx, std::size
     }
 }
 
-void PathBasedGASolver::initialise_edge_sharing_group(std::size_t start_idx, std::size_t end_idx) {
+void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::size_t end_idx) {
     #pragma omp parallel
     {
         std::vector<std::uint32_t> edge_versions(m_graph.get_num_edges(), 0);
@@ -164,7 +173,7 @@ void PathBasedGASolver::initialise_edge_sharing_group(std::size_t start_idx, std
     }
 }
 
-void PathBasedGASolver::initialise_random_group(std::size_t start_idx, std::size_t end_idx) {
+void PathBasedGASolver::build_random_group(std::size_t start_idx, std::size_t end_idx) {
     #pragma omp parallel for
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
@@ -184,7 +193,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
                                                                    const HFT::Request& request, 
                                                                    std::vector<int>& path_flow,
                                                                    std::vector<std::uint64_t>& used_edges,
-                                                                   int remaining) {
+                                                                   int remaining_orders) {
     int bottleneck_capacity{ std::numeric_limits<int>::max() };
 
     for (auto edge_id : path.edge_indices) {
@@ -192,7 +201,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         bottleneck_capacity = std::min(bottleneck_capacity, edge_capacity);
     }
 
-    int processed_orders = std::min(bottleneck_capacity, remaining);
+    int processed_orders = std::min(bottleneck_capacity, remaining_orders);
     double path_penalty{ 0.0 };
 
     for (auto edge_id : path.edge_indices) {

@@ -12,7 +12,7 @@
 std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
     std::unique_ptr<HFT::Graph> graph{ nullptr };
-    std::size_t id{ 0 };
+    std::size_t edge_id{ 0 };
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
@@ -29,7 +29,7 @@ std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_pat
             continue;
         }
 
-        HFT::Edge edge{ .id = id };
+        HFT::Edge edge{ .id = edge_id };
         std::getline(ss, token, ',');
         edge.source = std::stoi(token);
 
@@ -49,7 +49,7 @@ std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_pat
         bool source_is_server = std::stoi(token);
 
         graph->add_edge(edge, source_is_server);
-        id++;
+        edge_id++;
     }
 
     return graph;
@@ -58,12 +58,11 @@ std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& file_pat
 HFT::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& file_path) {
     CSVReader csv_reader{ file_path };
     HFT::ExpectedRequests requests{};
-    std::size_t id{ 0 };
 
     while (csv_reader.has_next()) {
         std::stringstream ss{ csv_reader.next() };
         std::string token{};
-        HFT::Request request{ .id = id };
+        HFT::Request request{};
 
         std::getline(ss, token, ',');
         request.server = std::stoi(token);
@@ -81,7 +80,6 @@ HFT::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& fil
         request.max_order_profit = std::stoi(token);
 
         requests.push_back(request);
-        id++;
     }
 
     return requests;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <limits>
 
 #include "utils/object_parser.h"
 #include "types/expected_requests.h"
@@ -48,7 +49,7 @@ int main(int argc, char* argv[]) {
     }
 
     double max_profit{ solver->solve() };
-    if (max_profit == 0) {
+    if (max_profit == std::numeric_limits<double>::lowest()) {
         std::cout << "No suitable network configuration found for the given set of requests\n";
     } else {
         std::cout << "Total profit: " << max_profit << '\n';

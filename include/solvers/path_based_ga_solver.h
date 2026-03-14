@@ -33,10 +33,11 @@ private:
     void mutate(Chromosome& offspring) override;
     void crossover(Chromosome& parent1, Chromosome& parent2) override;
     void warm_cache() override;
-    
-    void initialise_greedy_group(std::size_t start_idx, std::size_t end_idx);
-    void initialise_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
-    void initialise_random_group(std::size_t start_idx, std::size_t end_idx);
+
+    void initialise_path_pool(int num_shortest_paths);
+    void build_greedy_group(std::size_t start_idx, std::size_t end_idx);
+    void build_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
+    void build_random_group(std::size_t start_idx, std::size_t end_idx);
 
     PathPenalty get_path_penalty(const KShortestPathFinder::Path& path, 
                                  const HFT::Request& request,
@@ -45,8 +46,6 @@ private:
                                  int remaining_orders);
 
     PathPool m_path_pool;
-    KShortestPathFinder m_ksp_finder;
-
     std::uniform_int_distribution<std::size_t> m_anchor_dist;
 
     const double GREEDY_GROUP_PERC{ 0.25 };
