@@ -10,6 +10,7 @@
 
 #include "types/graph.h"
 #include "types/state.h"
+#include "utils/ksp_trie.h"
 
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     : m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
@@ -24,35 +25,32 @@ std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size
 
     std::priority_queue<Path, std::vector<Path>, std::greater<Path>> pq{};
     std::vector<Path> confirmed_paths{};
+
+    std::vector<std::size_t> root_path_edges{};
+    double root_latency = 0;
+
     pq.push(std::move(path));
+    m_ksp_trie.reset();
 
     for (int i = 0; i < k && !pq.empty(); ++i) {
         while (pq.size() > 0) {
-            const auto& top_edges = pq.top().edge_indices;
-            bool is_new = std::none_of(confirmed_paths.begin(), confirmed_paths.end(),
-                [&top_edges](const auto& p) {
-                    return p.edge_indices == top_edges;
-                });
-
-            if (is_new) break;
-            else pq.pop();
+            if (m_ksp_trie.exists_exact_match(pq.top().edge_indices)) pq.pop();
+            else break;
         }
 
         if (i == k - 1 || pq.empty()) {
             break;
         }
 
-        std::vector<std::size_t> root_path_edges{};
-        double root_latency = 0;
-
         confirmed_paths.push_back(std::move(pq.top()));
+        m_ksp_trie.insert(confirmed_paths[i].edge_indices);
         pq.pop();
 
         for (auto edge_id : confirmed_paths[i].edge_indices) {
             const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
-            disable_edges(confirmed_paths, root_path_edges);
+            disable_matching_outgoing_edges(root_path_edges);
             Path spur_path = dijkstra(spur_node, dest);
 
             if (!spur_path.edge_indices.empty()) {
@@ -72,6 +70,8 @@ std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size
         }
 
         m_disabled_nodes.clear();
+        root_path_edges.clear();
+        root_latency = 0;
     }
 
     return confirmed_paths;
@@ -130,23 +130,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
     return path;
 }
 
-void KShortestPathFinder::disable_edges(const std::vector<Path>& confirmed_paths, const std::vector<std::size_t>& root_edges) {
-    for (const auto& path : confirmed_paths) {
-        const auto& edges = path.edge_indices;
-        if (edges.size() <= root_edges.size()) {
-            continue;
-        }
-
-        bool match = true;
-        for (std::size_t j = 0; j < root_edges.size(); ++j) {
-            if (edges[j] != root_edges[j]) {
-                match = false;
-                break;
-            }
-        }
-
-        if (match) {
-            m_disabled_edges.insert(edges[root_edges.size()]);
-        }
-    }                              
+void KShortestPathFinder::disable_matching_outgoing_edges(const std::vector<std::size_t>& root_edges) {
+    std::vector<std::size_t> outgoing_edges{ m_ksp_trie.find_matching_outgoing_edges(root_edges) };
+    m_disabled_edges.insert(outgoing_edges.begin(), outgoing_edges.end());     
 }

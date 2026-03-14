@@ -24,7 +24,6 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
 , m_anchor_dist(0, requests.size() - 1) {
     for (const auto& request : m_requests) {
         auto paths = m_ksp_finder.find_paths(request.server, request.exchange, std::min(k, 64));
-        std::sort(paths.begin(), paths.end());
         m_path_pool[request.id] = std::move(paths);
     }
 
@@ -80,7 +79,7 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
 
 void PathBasedGASolver::mutate(Chromosome& offspring) {
     for (std::size_t i = 0; i < offspring.size(); ++i) {
-        std::uint64_t mask = 1;
+        std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
             if (get_random_double(0.0, 1.0) < m_config.mutation_rate) {
                 offspring[i] ^= mask;
@@ -93,7 +92,7 @@ void PathBasedGASolver::mutate(Chromosome& offspring) {
 
 void PathBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
     for (std::size_t i = 0; i < parent1.size(); ++i) {
-        std::uint64_t mask = 1;
+        std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
             if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
                 std::uint64_t p1_mask = parent1[i] & mask;
@@ -211,7 +210,7 @@ void PathBasedGASolver::warm_cache() {
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         for (std::size_t j = 0; j < m_path_pool[i].size(); ++j) {
-            KShortestPathFinder::Path& path = m_path_pool[i][j];
+            const auto& path = m_path_pool[i][j];
             sum_warm += path.total_latency;
 
             for (auto edge_id : path.edge_indices) {

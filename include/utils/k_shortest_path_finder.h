@@ -7,6 +7,7 @@
 #include <unordered_set>
 
 #include "types/graph.h"
+#include "utils/ksp_trie.h"
 
 class KShortestPathFinder {
 public:
@@ -29,6 +30,8 @@ public:
 
 private:
     const HFT::Graph& m_graph;
+    KSPTrie m_ksp_trie{};
+
     std::unordered_set<std::size_t> m_disabled_edges;
     std::unordered_set<std::size_t> m_disabled_nodes;
 
@@ -37,8 +40,7 @@ private:
 
     Path dijkstra(std::size_t source, std::size_t dest);
 
-    void disable_edges(const std::vector<Path>& confirmed_paths, 
-                       const std::vector<std::size_t>& root_edges);
+    void disable_matching_outgoing_edges(const std::vector<std::size_t>& root_edges);
 };
 
 #endif
