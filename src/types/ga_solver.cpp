@@ -55,17 +55,14 @@ std::vector<std::size_t> GASolver::select_next_gen_parents(const std::vector<dou
 std::vector<double> GASolver::get_population_fitness() {
     std::vector<double> pop_fitness(m_config.population_size, 0.0);
 
-    #pragma omp parallel
-    {
-        #pragma omp for reduction(max:m_best_profit)
-        for (std::size_t i = 0; i < m_config.population_size; ++i) {
-            double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
-            if (fitness > m_best_profit) {
-                m_best_profit = fitness;
-            }
-
-            pop_fitness[i] = std::max(fitness, 0.0);
+    #pragma omp parallel for reduction(max:m_best_profit)
+    for (std::size_t i = 0; i < m_config.population_size; ++i) {
+        double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
+        if (fitness > m_best_profit) {
+            m_best_profit = fitness;
         }
+
+        pop_fitness[i] = std::max(fitness, 0.0);
     }
 
     return pop_fitness;

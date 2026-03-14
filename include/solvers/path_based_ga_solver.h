@@ -4,8 +4,6 @@
 #include <vector>
 #include <cstdint>
 #include <random>
-#include <limits>
-#include <unordered_set>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -43,13 +41,13 @@ private:
     PathPenalty get_path_penalty(const KShortestPathFinder::Path& path, 
                                  const HFT::Request& request,
                                  std::vector<int>& path_flow,
-                                 std::unordered_set<std::size_t>& used_edges,
+                                 std::vector<std::uint64_t>& used_edges,
                                  int remaining_orders);
 
     PathPool m_path_pool;
     KShortestPathFinder m_ksp_finder;
 
-    std::uniform_int_distribution<int> m_anchor_dist;
+    std::uniform_int_distribution<std::size_t> m_anchor_dist;
 
     const double GREEDY_GROUP_PERC{ 0.25 };
     const double EDGE_SHARING_GROUP_PERC{ 0.5 };

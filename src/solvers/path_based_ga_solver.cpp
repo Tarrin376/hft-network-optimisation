@@ -2,10 +2,7 @@
 
 #include <vector>
 #include <cstdint>
-#include <algorithm>
-#include <iostream>
 #include <limits>
-#include <unordered_set>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -41,27 +38,27 @@ void PathBasedGASolver::build_initial_population() {
 
 double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
     std::vector<int> path_flow(m_graph.get_num_edges(), 0);
-    std::unordered_set<std::size_t> used_edges{};
+    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() / 64) + 1, 0);
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& request = m_requests[i];
-        int remaining_orders = request.num_orders;
+        int remaining = request.num_orders;
 
         double request_profit = request.max_order_profit * request.num_orders;
         std::uint64_t mask = 1ULL;
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
             if ((chromosome[i] & mask) > 0) {
-                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining_orders);
-                remaining_orders -= path_penalty.processed_orders;
+                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining);
+                remaining -= path_penalty.processed_orders;
                 request_profit -= path_penalty.penalty;
             }
 
             mask <<= 1;
         }
 
-        if (remaining_orders > 0) {
+        if (remaining > 0) {
             return std::numeric_limits<double>::lowest();
         } else {
             total_profit += request_profit;
@@ -70,8 +67,13 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         path_flow.assign(path_flow.size(), 0);
     }
 
-    for (auto edge_id : used_edges) {
-        total_profit -= m_graph.get_edge(edge_id).lease_cost;
+    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
+        std::size_t block_idx = i / 64;
+        std::size_t bit_idx = i % 64;
+
+        if ((used_edges[block_idx] & (1ULL << bit_idx)) > 0) {
+            total_profit -= m_graph.get_edge(i).lease_cost;
+        }
     }
 
     return total_profit;
@@ -123,31 +125,41 @@ void PathBasedGASolver::initialise_greedy_group(std::size_t start_idx, std::size
 }
 
 void PathBasedGASolver::initialise_edge_sharing_group(std::size_t start_idx, std::size_t end_idx) {
-    #pragma omp parallel for
-    for (std::size_t i = start_idx; i < end_idx; ++i) {
-        int anchor_req = m_anchor_dist(get_gen());
-        const auto& backbone = m_path_pool[anchor_req][0]; 
-        std::unordered_set<std::size_t> backbone_edges(backbone.edge_indices.begin(), backbone.edge_indices.end());
+    #pragma omp parallel
+    {
+        std::vector<std::uint32_t> edge_versions(m_graph.get_num_edges(), 0);
+        std::uint32_t current_version = 0;
 
-        for (std::size_t j = 0; j < m_requests.size(); ++j) {
-            std::size_t best_path_idx = 0;
-            int max_overlap = -1;
+        #pragma omp for
+        for (std::size_t i = start_idx; i < end_idx; ++i) {
+            std::size_t anchor_req = m_anchor_dist(get_gen());
+            const auto& backbone = m_path_pool[anchor_req][0]; 
 
-            for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
-                int current_overlap = 0;
-                for (const auto& edge : m_path_pool[j][k].edge_indices) {
-                    if (backbone_edges.contains(edge)) {
-                        current_overlap++;
+            current_version++; 
+            for (auto e : backbone.edge_indices) {
+                edge_versions[e] = current_version;
+            }
+
+            for (std::size_t j = 0; j < m_requests.size(); ++j) {
+                std::size_t best_path_idx = 0;
+                int max_overlap = -1;
+
+                for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
+                    int current_overlap = 0;
+                    for (const auto& edge : m_path_pool[j][k].edge_indices) {
+                        if (edge_versions[edge] == current_version) {
+                            current_overlap++;
+                        }
+                    }
+
+                    if (current_overlap > max_overlap) {
+                        max_overlap = current_overlap;
+                        best_path_idx = k;
                     }
                 }
 
-                if (current_overlap > max_overlap) {
-                    max_overlap = current_overlap;
-                    best_path_idx = k;
-                }
+                m_cur_pop_buffer[i][j] |= (1ULL << best_path_idx);
             }
-
-            m_cur_pop_buffer[i][j] |= (1ULL << best_path_idx);
         }
     }
 }
@@ -171,8 +183,8 @@ void PathBasedGASolver::initialise_random_group(std::size_t start_idx, std::size
 PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
                                                                    const HFT::Request& request, 
                                                                    std::vector<int>& path_flow,
-                                                                   std::unordered_set<std::size_t>& used_edges,
-                                                                   int remaining_orders) {
+                                                                   std::vector<std::uint64_t>& used_edges,
+                                                                   int remaining) {
     int bottleneck_capacity{ std::numeric_limits<int>::max() };
 
     for (auto edge_id : path.edge_indices) {
@@ -180,7 +192,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         bottleneck_capacity = std::min(bottleneck_capacity, edge_capacity);
     }
 
-    int processed_orders = std::min(bottleneck_capacity, remaining_orders);
+    int processed_orders = std::min(bottleneck_capacity, remaining);
     double path_penalty{ 0.0 };
 
     for (auto edge_id : path.edge_indices) {
@@ -188,7 +200,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         double penalty = processed_orders * request.max_order_profit * (edge.latency / m_max_latency);
 
         path_flow[edge_id] += processed_orders;
-        used_edges.insert(edge_id);
+        used_edges[edge_id / 64] |= (1ULL << (edge_id % 64));
         path_penalty += penalty;
     }
 
