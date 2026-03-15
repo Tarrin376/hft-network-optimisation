@@ -18,8 +18,9 @@
 LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph, 
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
-                                     double max_latency)
-: GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() / 64) + 1 }
+                                     double max_latency,
+                                     bool record_selected_edges)
+: GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() / 64) + 1, record_selected_edges }
 , m_crossover_dist(0, graph.get_num_edges() - 1) {
     warm_cache();
 }
@@ -79,9 +80,9 @@ bool LinkBasedGASolver::build_initial_population() {
     }
 
     Chromosome random(num_edges / 64 + 1);
-    for (std::size_t j = 0; j < num_edges; ++j) {
+    for (std::size_t i = 0; i < num_edges; ++i) {
         if (get_random_double(0.0, 1.0) < 0.5) {
-            random[j / 64] |= (1ULL << (j % 64));
+            random[i / 64] |= (1ULL << (i % 64));
         }
     }
 
@@ -89,9 +90,23 @@ bool LinkBasedGASolver::build_initial_population() {
     return true;
 }
 
-double LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+GASolver::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
     static thread_local SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
-    return evaluator.evaluate(chromosome);
+    double fitness{ evaluator.evaluate(chromosome) };
+
+    if (!m_record_selected_edges) {
+        return { fitness };
+    }
+
+    std::vector<std::size_t> selected_edges{};
+    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
+        bool is_selected = (chromosome[i / 64] & (1ULL << (i % 64))) > 0;
+        if (is_selected) {
+            selected_edges.push_back(i);
+        }
+    }
+
+    return { fitness, selected_edges };
 }
 
 void LinkBasedGASolver::warm_cache() {

@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <random>
+#include <iostream>
 
 #include <benchmark/benchmark.h>
 
@@ -37,16 +38,17 @@ static void BM_GASolver_Scaling(benchmark::State& state) {
     for (auto _ : state) {
         PathBasedGASolver solver{ 
             generator.get_graph(),
-            generator.get_requests(), 
-            { .seed = seed_gen() }, 
+            generator.get_requests(),
+            { .seed = seed_gen() },
             20.5,
-            num_shortest_paths
+            num_shortest_paths,
+            true
         };
 
         double total_profit = solver.solve();
         benchmark::DoNotOptimize(total_profit);
 
-        if (total_profit > std::numeric_limits<double>::lowest()) { 
+        if (total_profit > std::numeric_limits<double>::lowest()) {
             total_valid_profit += total_profit;
             success_count++;
         }

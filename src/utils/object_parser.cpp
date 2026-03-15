@@ -87,14 +87,17 @@ HFT::ExpectedRequests ObjectParser::parseExpectedRequests(const std::string& fil
 
 HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
     HFT::Config config{};
+    const std::string file_prefix{ "../data_files/" };
 
     for (int i = 0; i < argc; ++i) {
         std::string arg = argv[i];
 
         if (arg == "--graph" || arg == "-g") {
-            config.graph_file_path = argv[++i];
+            config.graph_file_path = file_prefix + argv[++i];
         } else if (arg == "--requests" || arg == "-o") {
-            config.expected_requests_path = argv[++i];
+            config.expected_requests_path = file_prefix + argv[++i];
+        } else if (arg == "--record") {
+            config.recorded_selected_edges_path = file_prefix + argv[++i];
         } else if (arg == "--algorithm" || arg == "-a") {
             config.algorithm = argv[++i];
         } else if (arg == "--maxlatency" || arg == "-l") {
@@ -113,8 +116,8 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
             config.milp.solver_id = argv[++i];
         } else if (arg == "--seed") {
             config.ga.seed = std::stoull(argv[++i]);
-        } else if (arg == "-k") {
-            config.k = std::stoull(argv[++i]);
+        } else if (arg == "--num-shortest-paths") {
+            config.num_shortest_paths = std::stoi(argv[++i]);
         }
     }
 

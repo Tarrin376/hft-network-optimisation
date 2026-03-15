@@ -12,9 +12,10 @@ namespace HFT {
     struct Config {
         std::string graph_file_path{};
         std::string expected_requests_path{};
+        std::string recorded_selected_edges_path{};
         std::string algorithm{};
-        std::size_t k{};
-
+        
+        int num_shortest_paths{};
         double max_latency{};
 
         GAConfig ga{};

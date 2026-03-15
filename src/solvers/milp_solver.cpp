@@ -21,8 +21,9 @@
 MILPSolver::MILPSolver(const HFT::Graph& graph, 
                        const HFT::ExpectedRequests& requests, 
                        const HFT::MILPConfig& config,
-                       double max_latency) 
-: Solver{ graph, requests, max_latency }
+                       double max_latency,
+                       bool record_selected_edges) 
+: Solver{ graph, requests, max_latency, record_selected_edges }
 , m_config{ config } {
     set_solver(config.solver_id);
 }
@@ -58,6 +59,15 @@ double MILPSolver::solve() {
     double total_profit = m_objective_func->Value();
     for (const auto& request : m_requests) {
         total_profit += request.max_order_profit * request.num_orders;
+    }
+
+    if (m_record_selected_edges) {
+        for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
+            bool is_selected = m_edge_vars[i]->solution_value();
+            if (is_selected) {
+                m_selected_edges.push_back(i);
+            }
+        }
     }
 
     return total_profit;

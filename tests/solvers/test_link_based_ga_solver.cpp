@@ -10,7 +10,7 @@
 
 class LinkBasedGASolverTest : public LinkBasedGASolver, public testing::Test {
 protected:
-    LinkBasedGASolverTest() : LinkBasedGASolver{ graph, requests, HFT::GAConfig{}, 100 } {}
+    LinkBasedGASolverTest() : LinkBasedGASolver{ graph, requests, HFT::GAConfig{}, 100, false } {}
 
     double get_random_double(double min, double max) override {
         return m_rand_double_prob;

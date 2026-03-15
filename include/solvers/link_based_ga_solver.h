@@ -18,7 +18,8 @@ public:
     LinkBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
-                      double max_latency);
+                      double max_latency,
+                      bool record_selected_edges);
 
 protected:
     void mutate(Chromosome& offspring) override;
@@ -26,7 +27,7 @@ protected:
 
 private:
     bool build_initial_population() override;
-    double get_chromosome_fitness(const Chromosome& chromosome) override;
+    FitnessPair get_chromosome_fitness(const Chromosome& chromosome) override;
     void warm_cache() override;
 
     std::uniform_int_distribution<int> m_crossover_dist;

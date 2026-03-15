@@ -15,8 +15,9 @@ GASolver::GASolver(const HFT::Graph& graph,
                    const HFT::ExpectedRequests& requests, 
                    const HFT::GAConfig& config,
                    double max_latency,
-                   std::size_t chromosome_size)
-: Solver{ graph, requests, max_latency }
+                   std::size_t chromosome_size,
+                   bool record_selected_edges)
+: Solver{ graph, requests, max_latency, record_selected_edges }
 , m_cur_pop_buffer(config.population_size, Chromosome(chromosome_size))
 , m_next_pop_buffer(config.population_size, Chromosome(chromosome_size))
 , m_config{ config } {}
@@ -59,19 +60,45 @@ std::vector<std::size_t> GASolver::select_next_gen_parents(const std::vector<dou
 
 std::vector<double> GASolver::get_population_fitness() {
     std::vector<double> pop_fitness(m_config.population_size, 0.0);
-    double local_best_profit = std::numeric_limits<double>::lowest();
+    double gen_best_profit = std::numeric_limits<double>::lowest();
+    std::vector<std::size_t> gen_best_edges;
 
-    #pragma omp parallel for reduction(max:local_best_profit)
-    for (std::size_t i = 0; i < m_config.population_size; ++i) {
-        double fitness = get_chromosome_fitness(m_cur_pop_buffer[i]);
-        if (fitness > local_best_profit) {
-            local_best_profit = fitness;
+    #pragma omp parallel
+    {
+        double thread_best_profit = std::numeric_limits<double>::lowest();
+        std::vector<std::size_t> thread_best_edges;
+
+        #pragma omp for
+        for (std::size_t i = 0; i < m_config.population_size; ++i) {
+            FitnessPair result = get_chromosome_fitness(m_cur_pop_buffer[i]);
+            pop_fitness[i] = std::max(result.fitness, 0.0);
+
+            if (result.fitness > thread_best_profit) {
+                thread_best_profit = result.fitness;
+                if (m_record_selected_edges) {
+                    thread_best_edges = std::move(result.selected_edges);
+                }
+            }
         }
 
-        pop_fitness[i] = std::max(fitness, 0.0);
+        #pragma omp critical
+        {
+            if (thread_best_profit > gen_best_profit) {
+                gen_best_profit = thread_best_profit;
+                if (m_record_selected_edges) {
+                    gen_best_edges = std::move(thread_best_edges);
+                }
+            }
+        }
     }
 
-    m_best_profit = std::max(m_best_profit, local_best_profit);
+    if (gen_best_profit > m_best_profit) {
+        m_best_profit = gen_best_profit;
+        if (m_record_selected_edges) {
+            m_selected_edges = std::move(gen_best_edges);
+        }
+    }
+
     return pop_fitness;
 }
 

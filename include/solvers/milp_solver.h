@@ -19,7 +19,8 @@ public:
     MILPSolver(const HFT::Graph& graph, 
                const HFT::ExpectedRequests& requests,
                const HFT::MILPConfig& config,
-               double max_latency); 
+               double max_latency,
+               bool record_selected_edges); 
 
     double solve() override;
     void set_solver(const std::string& solver_id);

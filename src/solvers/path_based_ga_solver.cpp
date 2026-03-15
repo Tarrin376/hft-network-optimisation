@@ -15,8 +15,9 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
                                      double max_latency,
-                                     int num_shortest_paths)
-: GASolver{ graph, requests, config, max_latency, requests.size() }
+                                     int num_shortest_paths,
+                                     bool record_selected_edges)
+: GASolver{ graph, requests, config, max_latency, requests.size(), record_selected_edges }
 , m_path_pool(requests.size())
 , m_anchor_dist(0, requests.size() - 1) {
     initialise_path_pool(std::min(num_shortest_paths, 64));
@@ -42,7 +43,7 @@ bool PathBasedGASolver::build_initial_population() {
     return true;
 }
 
-double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+GASolver::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
     std::vector<int> path_flow(m_graph.get_num_edges(), 0);
     std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() / 64) + 1, 0);
     double total_profit{ 0.0 };
@@ -65,7 +66,7 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         }
 
         if (remaining_orders > 0) {
-            return std::numeric_limits<double>::lowest();
+            return { std::numeric_limits<double>::lowest() };
         } else {
             total_profit += request_profit;
         }
@@ -73,16 +74,20 @@ double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
         path_flow.assign(path_flow.size(), 0);
     }
 
+    std::vector<std::size_t> selected_edges{};
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         std::size_t block_idx = i / 64;
         std::size_t bit_idx = i % 64;
 
         if ((used_edges[block_idx] & (1ULL << bit_idx)) > 0) {
             total_profit -= m_graph.get_edge(i).lease_cost;
+            if (m_record_selected_edges) {
+                selected_edges.push_back(i);
+            }
         }
     }
 
-    return total_profit;
+    return { total_profit, selected_edges };
 }
 
 void PathBasedGASolver::mutate(Chromosome& offspring) {
@@ -152,7 +157,7 @@ void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::siz
 
         #pragma omp for
         for (std::size_t i = start_idx; i < end_idx; ++i) {
-            std::size_t anchor_req = m_anchor_dist(get_gen());
+            std::size_t anchor_req = static_cast<std::size_t>(m_anchor_dist(get_gen()));
             const auto& backbone = m_path_pool[anchor_req][0]; 
 
             current_version++; 

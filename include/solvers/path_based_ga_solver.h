@@ -25,11 +25,12 @@ public:
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
                       double max_latency,
-                      int num_shortest_paths);
+                      int num_shortest_paths,
+                      bool record_selected_edges);
 
 private:
     bool build_initial_population() override;
-    double get_chromosome_fitness(const Chromosome& chromosome) override;
+    FitnessPair get_chromosome_fitness(const Chromosome& chromosome) override;
     void mutate(Chromosome& offspring) override;
     void crossover(Chromosome& parent1, Chromosome& parent2) override;
     void warm_cache() override;
@@ -46,7 +47,7 @@ private:
                                  int remaining_orders);
 
     PathPool m_path_pool;
-    std::uniform_int_distribution<std::size_t> m_anchor_dist;
+    std::uniform_int_distribution<int> m_anchor_dist;
 
     const double GREEDY_GROUP_PERC{ 0.25 };
     const double EDGE_SHARING_GROUP_PERC{ 0.5 };

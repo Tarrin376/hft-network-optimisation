@@ -30,7 +30,7 @@ TEST(BruteForceSolverTest, ReturnsTheGloballyOptimalProfit) {
         .max_order_profit = 360 
     });
 
-    BruteForceSolver brute_force_solver{ graph, requests, 100 };
+    BruteForceSolver brute_force_solver{ graph, requests, 100, false };
 
     double total_profit{ brute_force_solver.solve() };
     EXPECT_FLOAT_EQ(total_profit, 24);
@@ -49,7 +49,7 @@ TEST(BruteForceSolverTest, ReturnsNegativeInfinityProfitWhenNoSolutionFound) {
         .max_order_profit = 360 
     });
 
-    BruteForceSolver brute_force_solver{ graph, requests, 100 };
+    BruteForceSolver brute_force_solver{ graph, requests, 100, false };
 
     double total_profit{ brute_force_solver.solve() };
     EXPECT_FLOAT_EQ(total_profit, -(std::numeric_limits<double>::lowest()));
