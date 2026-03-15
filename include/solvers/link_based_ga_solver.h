@@ -25,7 +25,7 @@ protected:
     void crossover(Chromosome& parent1, Chromosome& parent2) override;
 
 private:
-    void build_initial_population() override;
+    bool build_initial_population() override;
     double get_chromosome_fitness(const Chromosome& chromosome) override;
     void warm_cache() override;
 

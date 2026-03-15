@@ -25,10 +25,10 @@ public:
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
                       double max_latency,
-                      int k);
+                      int num_shortest_paths);
 
 private:
-    void build_initial_population() override;
+    bool build_initial_population() override;
     double get_chromosome_fitness(const Chromosome& chromosome) override;
     void mutate(Chromosome& offspring) override;
     void crossover(Chromosome& parent1, Chromosome& parent2) override;

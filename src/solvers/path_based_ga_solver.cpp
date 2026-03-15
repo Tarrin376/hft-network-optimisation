@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <algorithm>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -22,13 +23,23 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
     warm_cache();
 }
 
-void PathBasedGASolver::build_initial_population() {
+bool PathBasedGASolver::build_initial_population() {
+    bool not_solvable{ std::any_of(m_path_pool.begin(), m_path_pool.end(), [](const auto& paths) -> bool {
+        return paths.empty();
+    }) };
+
+    if (not_solvable) {
+        return false;
+    }
+
     int greedy_end{ static_cast<int>(GREEDY_GROUP_PERC * m_config.population_size) };
-    int arc_end{ greedy_end + static_cast<int>(EDGE_SHARING_GROUP_PERC * m_config.population_size) };
+    int edge_end{ greedy_end + static_cast<int>(EDGE_SHARING_GROUP_PERC * m_config.population_size) };
 
     build_greedy_group(0, greedy_end);
-    build_edge_sharing_group(greedy_end, arc_end);
-    build_random_group(arc_end, m_config.population_size);
+    build_edge_sharing_group(greedy_end, edge_end);
+    build_random_group(edge_end, m_config.population_size);
+
+    return true;
 }
 
 double PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {

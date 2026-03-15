@@ -66,7 +66,7 @@ void LinkBasedGASolver::mutate(Chromosome& offspring) {
     }
 }
 
-void LinkBasedGASolver::build_initial_population() {
+bool LinkBasedGASolver::build_initial_population() {
     std::size_t num_edges{ m_graph.get_num_edges() };
     
     #pragma omp parallel for
@@ -86,6 +86,7 @@ void LinkBasedGASolver::build_initial_population() {
     }
 
     m_cur_pop_buffer.back() = std::move(random);
+    return true;
 }
 
 double LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {

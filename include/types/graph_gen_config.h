@@ -11,6 +11,7 @@ namespace HFT {
         std::size_t num_nodes{};
         std::size_t num_edges{};
         std::size_t num_servers{};
+        std::size_t num_requests{};
         unsigned long long seed{ 34ULL };
     };
 }

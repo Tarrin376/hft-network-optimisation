@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <random>
+#include <iostream>
 
 #include "types/solver.h"
 #include "types/ga_config.h"
@@ -21,7 +22,11 @@ GASolver::GASolver(const HFT::Graph& graph,
 , m_config{ config } {}
 
 double GASolver::solve() {
-    build_initial_population();
+    bool success = build_initial_population();
+    if (!success) {
+        return m_best_profit;
+    }
+    
     for (int i = 0; i < m_config.generations; ++i) {
         reproduce();
     }

@@ -26,7 +26,7 @@ public:
     double solve() override;
 
 protected:
-    virtual void build_initial_population() = 0;
+    virtual bool build_initial_population() = 0;
     virtual double get_chromosome_fitness(const Chromosome& chromosome) = 0;
     virtual void mutate(Chromosome& offspring) = 0;
     virtual void crossover(Chromosome& parent1, Chromosome& parent2) = 0;
