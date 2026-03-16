@@ -16,8 +16,9 @@ public:
 
     void generate();
 
-    const HFT::Graph& get_graph();
-    const HFT::ExpectedRequests& get_requests();
+    const HFT::Graph& get_graph() const;
+    const HFT::ExpectedRequests& get_requests() const;
+    const HFT::GraphGenConfig& get_config() const;
 
 private:
     void reset();

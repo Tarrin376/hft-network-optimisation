@@ -1,6 +1,9 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
+#include <cstdint>
+#include <vector>
+
 #include "types/expected_requests.h"
 #include "types/graph.h"
 

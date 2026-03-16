@@ -25,12 +25,16 @@ void GraphGenerator::generate() {
     generate_requests();
 }
 
-const HFT::Graph& GraphGenerator::get_graph() {
+const HFT::Graph& GraphGenerator::get_graph() const {
     return m_graph;
 }
 
-const HFT::ExpectedRequests& GraphGenerator::get_requests() {
+const HFT::ExpectedRequests& GraphGenerator::get_requests() const {
     return m_requests;
+}
+
+const HFT::GraphGenConfig& GraphGenerator::get_config() const {
+    return m_config;
 }
 
 void GraphGenerator::reset() {
