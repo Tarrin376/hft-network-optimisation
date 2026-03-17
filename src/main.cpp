@@ -4,6 +4,7 @@
 #include <limits>
 
 #include "utils/object_parser.h"
+#include "utils/logger.h"
 #include "types/expected_requests.h"
 #include "types/graph.h"
 #include "types/config.h"
@@ -14,7 +15,7 @@
 #include "solvers/milp_solver.h"
 
 std::unique_ptr<Solver> determine_solver(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, const HFT::Config& config) {
-    bool record_selected_edges{ config.recorded_selected_edges_path.length() > 0 };
+    bool record_selected_edges{ config.recorded_edges_file_name.length() > 0 };
 
     if (config.algorithm == "brute-force") {
         return std::make_unique<BruteForceSolver>(graph, requests, config.max_latency, record_selected_edges);
@@ -32,13 +33,13 @@ std::unique_ptr<Solver> determine_solver(const HFT::Graph& graph, const HFT::Exp
 int main(int argc, char* argv[]) {
     HFT::Config config{ ObjectParser::parseArgs(argc, argv) };
 
-    std::unique_ptr<HFT::Graph> graph{ ObjectParser::parseGraph(config.graph_file_path) };
+    std::unique_ptr<HFT::Graph> graph{ ObjectParser::parseGraph(config.nodes_file_name, config.edges_file_name) };
     if (!graph) {
         std::cout << "Failed to parse graph. Check file name and try again.\n";
         return 1;
     }
 
-    HFT::ExpectedRequests requests{ ObjectParser::parseExpectedRequests(config.expected_requests_path) };
+    HFT::ExpectedRequests requests{ ObjectParser::parseExpectedRequests(config.requests_file_name) };
     if (requests.empty()) {
         std::cout << "Failed to parse expected requests. Check file name and try again.\n";
         return 1;
@@ -57,11 +58,9 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Total profit: " << max_profit << '\n';
-    if (solver->get_record_selected_edges()) {
-        for (const auto& edge_id : solver->get_selected_edges()) {
-            const auto& edge = graph->get_edge(edge_id);
-            std::cout << "From: " << edge.source << " To: " << edge.dest << '\n';
-        }
+    if (config.recorded_edges_file_name.length() > 0) {
+        Logger::log_optimal_network(solver->get_selected_edges(), config.recorded_edges_file_name);
+        std::cout << "Saved optimal network configuration to file: '" << config.recorded_edges_file_name << "'\n";
     }
 
     return 0;

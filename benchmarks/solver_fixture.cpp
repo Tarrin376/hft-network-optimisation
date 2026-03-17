@@ -34,7 +34,7 @@ void SolverFixture::TearDown(const ::benchmark::State& _) {
 
 void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
     std::vector<double> densities{ 0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 0.9 };
-    const int num_requests{ 5 };
+    const int num_requests{ 1 };
 
     for (std::int64_t nodes = 100; nodes <= 5000; nodes *= 2) {
         for (auto density : densities) {

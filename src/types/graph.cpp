@@ -11,22 +11,20 @@ HFT::Graph::Graph(std::size_t num_nodes, std::size_t num_edges)
     , m_num_edges{ num_edges } 
 {}
 
-void HFT::Graph::add_edge(const Edge& edge, bool source_is_server) {
+void HFT::Graph::add_edge(const Edge& edge) {
     assert(edge.source < m_num_nodes);
     assert(edge.dest < m_num_nodes);
     assert(edge.id < m_num_edges);
 
     m_edges[edge.id] = edge;
 
-    auto& src = m_nodes[edge.source];
-    auto& dst = m_nodes[edge.dest];
+    m_nodes[edge.source].outgoing_edges.push_back(edge.id);
+    m_nodes[edge.dest].incoming_edges.push_back(edge.id);
+}
 
-    src.id = edge.source;
-    src.is_server = source_is_server;
-    src.outgoing_edges.push_back(edge.id);
-
-    dst.id = edge.dest;
-    dst.incoming_edges.push_back(edge.id);
+void HFT::Graph::add_node(const Node& node) {
+    assert(node.id < m_num_nodes);
+    m_nodes[node.id] = node;
 }
 
 void HFT::Graph::reset() {

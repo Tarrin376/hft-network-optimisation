@@ -25,7 +25,8 @@ namespace HFT {
     public:
         Graph(std::size_t num_nodes, std::size_t num_edges);
 
-        void add_edge(const Edge& edge, bool source_is_server);
+        void add_edge(const Edge& edge);
+        void add_node(const Node& node);
 
         void reset();
 

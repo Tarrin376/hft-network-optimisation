@@ -9,7 +9,7 @@
 #include "types/config.h"
 
 namespace ObjectParser {
-    std::unique_ptr<HFT::Graph> parseGraph(const std::string& file_path);
+    std::unique_ptr<HFT::Graph> parseGraph(const std::string& nodes_file_path, const std::string& edges_file_path);
     HFT::ExpectedRequests parseExpectedRequests(const std::string& file_path);
     HFT::Config parseArgs(int argc, char* argv[]);
 }

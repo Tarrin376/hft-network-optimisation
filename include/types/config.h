@@ -10,9 +10,10 @@
 
 namespace HFT {
     struct Config {
-        std::string graph_file_path{};
-        std::string expected_requests_path{};
-        std::string recorded_selected_edges_path{};
+        std::string nodes_file_name{};
+        std::string edges_file_name{};
+        std::string requests_file_name{};
+        std::string recorded_edges_file_name{};
         std::string algorithm{};
         
         int num_shortest_paths{};

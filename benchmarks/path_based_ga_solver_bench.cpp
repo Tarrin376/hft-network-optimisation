@@ -5,18 +5,22 @@
 
 #include "bench_utils/solver_fixture.h"
 #include "solvers/path_based_ga_solver.h"
+#include "utils/logger.h"
 
 BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
-    double total_profit = std::numeric_limits<double>::lowest();
-    double profit_sum = 0.0;
+    double best_profit{ std::numeric_limits<double>::lowest() };
+    double profit_sum{ 0.0 };
 
-    unsigned long long best_seed = 0;
-    int successes = 0;
+    const int num_shortest_paths{ 40 };
+    unsigned long long best_seed{ 0ULL };
+    int successes{ 0 };
 
-    const int num_shortest_paths = 30;
+    const HFT::Graph& graph{ generator->get_graph() };
+    const HFT::ExpectedRequests& requests{ generator->get_requests() };
+
     HFT::GAConfig solver_config {
         .population_size{ 100 },
-        .generations{ 1500 },
+        .generations{ 1000 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
@@ -26,8 +30,8 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         solver_config.seed = current_seed;
         
         PathBasedGASolver solver{ 
-            generator->get_graph(),
-            generator->get_requests(),
+            graph,
+            requests,
             solver_config, 
             generator->get_config().max_latency,
             num_shortest_paths,
@@ -39,17 +43,17 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
             profit_sum += profit;
             successes++;
 
-            if (profit > total_profit) {
-                total_profit = profit;
+            if (profit > best_profit) {
+                best_profit = profit;
                 best_seed = current_seed;
             }
         }
     }
 
-    if (total_profit > std::numeric_limits<double>::lowest()) {
+    if (best_profit > std::numeric_limits<double>::lowest()) {
         PathBasedGASolver recorder{ 
-            generator->get_graph(),
-            generator->get_requests(),
+            graph,
+            requests,
             { .seed = best_seed },
             generator->get_config().max_latency, 
             num_shortest_paths, 
@@ -57,10 +61,19 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         };
 
         recorder.solve();
+        auto edges = recorder.get_selected_edges();
+
+        static int id{ 0 };
+        id++;
+
+        Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
+        Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
+        Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_" + std::to_string(id) + ".csv");
     }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : 0;
-    state.counters["TotalProfit"] = (successes > 0) ? total_profit : 0;
+    state.counters["BestProfit"] = best_profit;
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
@@ -68,6 +81,6 @@ BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
     ->Apply(SolverFixture::ScalingArguments)
     ->Unit(benchmark::kMillisecond)
     ->UseRealTime()
-    ->Iterations(20);
+    ->Iterations(30);
 
 BENCHMARK_MAIN();

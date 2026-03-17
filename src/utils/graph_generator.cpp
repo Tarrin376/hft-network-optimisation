@@ -20,6 +20,7 @@ GraphGenerator::GraphGenerator(const HFT::GraphGenConfig& config)
 
 void GraphGenerator::generate() {
     reset();
+    generate_nodes();
     assign_servers();
     generate_edges();
     generate_requests();
@@ -41,18 +42,17 @@ void GraphGenerator::reset() {
     m_graph.reset();
     m_requests.clear();
     m_used_edges.clear();
-    m_servers.clear();
 }
 
 void GraphGenerator::generate_requests() {
     for (std::size_t i = 0; i < m_config.num_requests; ++i) {
         std::size_t server = static_cast<std::size_t>(m_node_dist(m_gen));
-        while (!m_servers.contains(server)) {
+        while (!m_graph.get_node(server).is_server) {
             server = static_cast<std::size_t>(m_node_dist(m_gen));
         }
 
         std::size_t exchange = static_cast<std::size_t>(m_node_dist(m_gen));
-        while (m_servers.contains(exchange)) {
+        while (m_graph.get_node(exchange).is_server) {
             exchange = static_cast<std::size_t>(m_node_dist(m_gen));
         }
 
@@ -65,6 +65,12 @@ void GraphGenerator::generate_requests() {
         };
 
         m_requests.push_back(new_request);
+    }
+}
+
+void GraphGenerator::generate_nodes() {
+    for (std::size_t i = 0; i < m_graph.get_num_nodes(); ++i) {
+        m_graph.add_node({ i, false });
     }
 }
 
@@ -93,14 +99,17 @@ void GraphGenerator::create_edge(std::size_t from, std::size_t to, std::size_t e
         m_lease_cost_dist(m_gen) 
     };
 
-    m_graph.add_edge(edge, m_servers.contains(from));
+    m_graph.add_edge(edge);
 }
 
 void GraphGenerator::assign_servers() {
-    while (m_servers.size() < m_config.num_servers) {
+    std::size_t remaining_servers{ m_config.num_servers };
+
+    while (remaining_servers > 0) {
         std::size_t node_id = static_cast<std::size_t>(m_node_dist(m_gen));
-        if (!m_servers.contains(node_id)) {
-            m_servers.insert(node_id);
+        if (!m_graph.get_node(node_id).is_server) {
+            m_graph.add_node({ node_id, true });
+            remaining_servers--;
         }
     }
 }
