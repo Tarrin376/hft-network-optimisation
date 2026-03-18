@@ -33,13 +33,11 @@ void SolverFixture::TearDown(const ::benchmark::State& _) {
 }
 
 void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
-    std::vector<double> densities{ 0.01, 0.05, 0.1, 0.2, 0.5, 0.7, 0.9 };
+    std::vector<std::int64_t> sparse{ 50, 200, 500, 1000, 2500, 5000 };
     const int num_requests{ 1 };
 
-    for (std::int64_t nodes = 100; nodes <= 5000; nodes *= 2) {
-        for (auto density : densities) {
-            std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * density);
-            b->Args({nodes, edges, num_requests});
-        }
+    for (auto nodes : sparse) {
+        std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * 0.01);
+        b->Args({nodes, edges, num_requests});
     }
 }

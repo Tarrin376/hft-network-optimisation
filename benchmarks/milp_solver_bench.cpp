@@ -14,7 +14,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         MILPSolver solver{ 
             graph,
             requests,
-            { "CP-SAT" }, 
+            { "CBC" }, 
             generator->get_config().max_latency,
             false 
         };
@@ -26,7 +26,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         MILPSolver recorder{ 
             graph,
             requests,
-            { "HiGHS" }, 
+            { "CBC" }, 
             generator->get_config().max_latency,
             true 
         };
@@ -46,8 +46,8 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
     state.counters["BestProfit"] = best_profit;
 }
 
-BENCHMARK_REGISTER_F(SolverFixture, MILPSolver)
-    ->Apply(SolverFixture::ScalingArguments)
-    ->Unit(benchmark::kMillisecond)
-    ->UseRealTime()
-    ->Iterations(1);
+// BENCHMARK_REGISTER_F(SolverFixture, MILPSolver)
+//     ->Apply(SolverFixture::ScalingArguments)
+//     ->Unit(benchmark::kMillisecond)
+//     ->UseRealTime()
+//     ->Iterations(1);

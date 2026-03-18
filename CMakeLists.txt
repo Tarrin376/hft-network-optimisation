@@ -9,10 +9,6 @@ set(BUILD_DEPS ON CACHE BOOL "" FORCE)
 set(BUILD_Protobuf ON CACHE BOOL "" FORCE)
 set(BUILD_absl ON CACHE BOOL "" FORCE)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
-
 include(FetchContent)
 
 # HFT Library

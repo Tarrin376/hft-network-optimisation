@@ -105,8 +105,8 @@ void MILPSolver::build_edge_variables() {
 }
 
 void MILPSolver::build_flow_variables() {
-    for (size_t i = 0; i < m_requests.size(); ++i) {
-        for (size_t a = 0; a < m_graph.get_num_edges(); ++a) {
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
+        for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             std::string flow_label = "f" + std::to_string(i) + "," + std::to_string(a);
             m_flow_vars.emplace_back(m_solver->MakeNumVar(0.0, m_requests[i].num_orders, flow_label));
         }
@@ -114,10 +114,10 @@ void MILPSolver::build_flow_variables() {
 }
 
 void MILPSolver::apply_flow_conservation_constraints() {
-    for (size_t i = 0; i < m_requests.size(); ++i) {
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& req = m_requests[i];
         
-        for (size_t v = 0; v < m_graph.get_num_nodes(); ++v) {
+        for (std::size_t v = 0; v < m_graph.get_num_nodes(); ++v) {
             // Set the RHS (Right Hand Side) based on if v is a server, exchange, or an intermediate node
             double rhs = v == req.server ? req.num_orders : (v == req.exchange ? -req.num_orders : 0);
             
@@ -139,8 +139,8 @@ void MILPSolver::apply_flow_conservation_constraints() {
 }
 
 void MILPSolver::apply_capacity_constraints() {
-    for (size_t i = 0; i < m_requests.size(); ++i) {
-        for (size_t a = 0; a < m_graph.get_num_edges(); ++a) {
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
+        for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             or_tools::MPConstraint* const cap_con = m_solver->MakeRowConstraint(-or_tools::MPSolver::infinity(), 0.0);
             double capacity_coeff = m_graph.get_edge(a).rate_limit * m_requests[i].planning_horizon;
             
@@ -154,8 +154,8 @@ void MILPSolver::build_objective_function() {
     m_objective_func = m_solver->MutableObjective();
 
     // Latency Penalty Term
-    for (size_t i = 0; i < m_requests.size(); ++i) {
-        for (size_t a = 0; a < m_graph.get_num_edges(); ++a) {
+    for (std::size_t i = 0; i < m_requests.size(); ++i) {
+        for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             double edge_latency = m_graph.get_edge(a).latency;
             double penalty = -1.0 * (m_requests[i].max_order_profit * (edge_latency / m_max_latency));
             m_objective_func->SetCoefficient(m_flow_vars[i * m_graph.get_num_edges() + a], penalty);
@@ -163,7 +163,7 @@ void MILPSolver::build_objective_function() {
     }
 
     // Cost Term
-    for (size_t a = 0; a < m_graph.get_num_edges(); ++a) {
+    for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
         double cost_a = m_graph.get_edge(a).lease_cost;
         m_objective_func->SetCoefficient(m_edge_vars[a], -cost_a);
     }

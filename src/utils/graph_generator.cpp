@@ -9,7 +9,7 @@
 
 GraphGenerator::GraphGenerator(const HFT::GraphGenConfig& config) 
 : m_rate_limit_dist(0, config.max_rate_limit)
-, m_lease_cost_dist(0, config.max_lease_cost)
+, m_lease_cost_dist(1, config.max_lease_cost)
 , m_latency_dist(0, config.max_latency)
 , m_node_dist(0, config.num_nodes - 1)
 , m_config{ config }
