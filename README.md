@@ -23,7 +23,7 @@ This work studies a High-Frequency Trading (HFT) Network Design Problem, where a
 > cd hft-network-optimization
 # Create build directory
 > mkdir build
-# Create build files using 'release' mode and optimisation flags
+# Create build files in release mode and optimisation flags
 > cmake -S . -B build -DBUILD_DEPS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -O3"
 # Build the repo.
 > cmake --build build -j<num_processes>
