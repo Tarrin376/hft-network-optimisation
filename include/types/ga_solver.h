@@ -47,8 +47,8 @@ protected:
 
     std::vector<Chromosome> m_cur_pop_buffer;
     std::vector<Chromosome> m_next_pop_buffer;
-
     HFT::GAConfig m_config{};
+    
     double m_best_profit{ std::numeric_limits<double>::lowest() };
 };
 

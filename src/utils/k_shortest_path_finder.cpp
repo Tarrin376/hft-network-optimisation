@@ -17,9 +17,10 @@ KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
     , m_graph{ graph } {}
 
-std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
+std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
     Path path{ dijkstra(source, dest) };
     m_k_shortest_paths.clear();
+    m_ksp_trie.reset();
 
     if (path.edge_indices.empty()) {
         return m_k_shortest_paths;
@@ -27,7 +28,6 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
 
     std::priority_queue<Path, std::vector<Path>, std::greater<Path>> pq{};
     pq.push(std::move(path));
-    m_ksp_trie.reset();
 
     for (int i = 0; i < k && !pq.empty(); ++i) {
         while (pq.size() > 0) {
@@ -40,11 +40,11 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
         }
 
         m_k_shortest_paths.push_back(std::move(pq.top()));
-        m_ksp_trie.insert(m_k_shortest_paths[i].edge_indices);
+        m_ksp_trie.insert(m_k_shortest_paths.back().edge_indices);
         pq.pop();
 
         double root_latency = 0;
-        for (auto edge_id : m_k_shortest_paths[i].edge_indices) {
+        for (auto edge_id : m_k_shortest_paths.back().edge_indices) {
             const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
@@ -67,7 +67,7 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
             m_disabled_edges.assign(m_disabled_edges.size(), 0);
         }
 
-        m_disabled_nodes.assign(m_disabled_edges.size(), 0);
+        m_disabled_nodes.assign(m_disabled_nodes.size(), 0);
         m_root_path_edges.clear();
     }
 
@@ -97,10 +97,9 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
         const auto& node = m_graph.get_node(current.node_id);
         for (const auto& edge_id : node.outgoing_edges) {
             const auto& edge = m_graph.get_edge(edge_id);
-            bool edge_disabled = m_disabled_edges[edge_id / 64] & (1ULL << (edge_id % 64));
-            bool node_disabled = m_disabled_nodes[edge.dest / 64] & (1ULL << (edge.dest % 64));
 
-            if (edge_disabled || node_disabled) {
+            if (m_disabled_edges[edge_id / 64] & (1ULL << (edge_id % 64)) || 
+                m_disabled_nodes[edge.dest / 64] & (1ULL << (edge.dest % 64))) {
                 continue;
             }
 

@@ -37,8 +37,8 @@ namespace HFT {
         std::size_t get_num_edges() const;
 
     private:
-        std::vector<Edge> m_edges{};
         std::vector<Node> m_nodes{};
+        std::vector<Edge> m_edges{};
 
         const std::size_t m_num_nodes{};
         const std::size_t m_num_edges{};

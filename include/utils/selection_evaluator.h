@@ -24,13 +24,13 @@ private:
 
     bool edge_is_selected(std::size_t edge_index, const std::vector<std::uint64_t>& selected_edges) const;
 
-    std::vector<const HFT::Edge*> m_parent_edge_buffer;
     std::vector<double> m_min_latency_buffer;
+    std::vector<const HFT::Edge*> m_parent_edge_buffer;
     std::vector<int> m_path_flow;
 
+    const double m_max_latency{};
     const HFT::Graph& m_graph;
     const HFT::ExpectedRequests& m_requests;
-    const double m_max_latency{};
 };
 
 #endif

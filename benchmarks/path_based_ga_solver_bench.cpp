@@ -20,7 +20,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
 
     HFT::GAConfig solver_config {
         .population_size{ 70 },
-        .generations{ 1400 },
+        .generations{ 1300 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
@@ -81,6 +81,6 @@ BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
     ->Apply(SolverFixture::ScalingArguments)
     ->Unit(benchmark::kMillisecond)
     ->UseRealTime()
-    ->Iterations(30);
+    ->Iterations(1);
 
 BENCHMARK_MAIN();

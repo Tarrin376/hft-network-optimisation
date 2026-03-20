@@ -1,16 +1,19 @@
 #ifndef KSP_TRIE_H
 #define KSP_TRIE_H
 
-#include <unordered_map>
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 class KSPTrie {
     public:
         struct KSPNode {
             bool is_leaf{};
-            std::unordered_map<std::size_t, KSPNode> children{};
+            std::size_t edge_id{};
+            std::vector<std::unique_ptr<KSPNode>> children{};
         };
+
+        KSPTrie();
 
         void insert(const std::vector<std::size_t>& edge_indices);
 
@@ -18,10 +21,12 @@ class KSPTrie {
 
         bool exists_exact_match(const std::vector<std::size_t>& edge_indices);
 
+        KSPNode* get_matching_edge(const std::vector<std::unique_ptr<KSPNode>>& children, std::size_t edge_id);
+
         void reset();
     
     private:
-        KSPNode root{};
+        std::unique_ptr<KSPNode> m_root;
 };
 
 #endif

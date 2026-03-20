@@ -24,20 +24,21 @@ public:
 
     KShortestPathFinder(const HFT::Graph& graph);
 
-    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, int k);
+    std::vector<Path> find_paths(std::size_t source, std::size_t dest, int k);
 
 private:
-    const HFT::Graph& m_graph;
     KSPTrie m_ksp_trie{};
 
     std::vector<std::uint64_t> m_disabled_edges;
     std::vector<std::uint64_t> m_disabled_nodes;
 
-    std::vector<Path> m_k_shortest_paths{};
-    std::vector<std::size_t> m_root_path_edges{};
-
     std::vector<double> m_min_latency_buffer;
     std::vector<const HFT::Edge*> m_parent_edge_buffer;
+
+    const HFT::Graph& m_graph;
+
+    std::vector<Path> m_k_shortest_paths{};
+    std::vector<std::size_t> m_root_path_edges{};
 
     Path dijkstra(std::size_t source, std::size_t dest);
 

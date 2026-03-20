@@ -33,11 +33,11 @@ void SolverFixture::TearDown(const ::benchmark::State& _) {
 }
 
 void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
-    std::vector<std::int64_t> sparse{ 50000 };
+    std::vector<std::int64_t> sparse{ 100, 500, 1000, 2500, 5000, 10000 };
     const int num_requests{ 1 };
 
     for (auto nodes : sparse) {
-        std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * 0.001);
+        std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * 0.01);
         b->Args({nodes, edges, num_requests});
     }
 }

@@ -36,7 +36,7 @@ bool PathBasedGASolver::build_initial_population() {
     int greedy_end{ static_cast<int>(GREEDY_GROUP_PERC * m_config.population_size) };
     int edge_end{ greedy_end + static_cast<int>(EDGE_SHARING_GROUP_PERC * m_config.population_size) };
 
-    build_greedy_group(0, greedy_end);
+    build_greedy_group(0, edge_end);
     build_edge_sharing_group(greedy_end, edge_end);
     build_random_group(edge_end, m_config.population_size);
 
@@ -128,8 +128,7 @@ void PathBasedGASolver::initialise_path_pool(int num_shortest_paths) {
         #pragma omp for
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& request = m_requests[i];
-            auto& paths = ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths);
-            m_path_pool[i] = std::move(paths);
+            m_path_pool[i] = ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths);
         }
     }
 }

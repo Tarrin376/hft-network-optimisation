@@ -22,8 +22,8 @@ protected:
     const HFT::Graph& m_graph;
     const HFT::ExpectedRequests& m_requests;
     const double m_max_latency{};
-
     const bool m_record_selected_edges{};
+    
     std::vector<std::size_t> m_selected_edges{};
 };
 

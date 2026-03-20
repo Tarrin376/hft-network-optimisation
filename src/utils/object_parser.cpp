@@ -14,7 +14,6 @@
 std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& nodes_file_path, const std::string& edges_file_path) {
     CSVReader nodes_csv_reader{ nodes_file_path };
     std::vector<HFT::Node> nodes{};
-    std::size_t node_id{ 0 };
 
     while (nodes_csv_reader.has_next()) {
         std::stringstream ss{ nodes_csv_reader.next() };
@@ -27,9 +26,7 @@ std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& nodes_fi
         bool is_server = std::stoi(token);
 
         HFT::Node new_node{ .id = node_id, .is_server = is_server };
-
         nodes.push_back(std::move(new_node));
-        node_id++;
     }
 
     CSVReader edges_csv_reader{ edges_file_path };

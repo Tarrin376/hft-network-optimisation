@@ -33,13 +33,13 @@ private:
     std::uniform_real_distribution<double> m_latency_dist;
     std::uniform_int_distribution<int> m_node_dist;
 
+    HFT::GraphGenConfig m_config{};
+    std::mt19937 m_gen{};
+    HFT::Graph m_graph;
+
     std::set<std::pair<std::size_t, std::size_t>> m_used_edges{};
 
     HFT::ExpectedRequests m_requests{};
-    HFT::Graph m_graph;
-
-    HFT::GraphGenConfig m_config{};
-    std::mt19937 m_gen{};
 };
 
 #endif
