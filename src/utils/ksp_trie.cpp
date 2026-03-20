@@ -1,7 +1,6 @@
 #include "utils/ksp_trie.h"
 
 #include <algorithm>
-#include <unordered_map>
 #include <vector>
 #include <cstdint>
 

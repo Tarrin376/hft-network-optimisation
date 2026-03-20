@@ -98,8 +98,8 @@ void GASolver::compute_population_fitness() {
 }
 
 double GASolver::get_random_double(double min, double max) {
-    std::uniform_real_distribution<double> dist(min, max);
-    return dist(get_gen());
+    static thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
+    return min + (max - min) * dist(get_gen());
 }
 
 std::mt19937& GASolver::get_gen() {
