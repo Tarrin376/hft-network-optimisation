@@ -18,6 +18,8 @@ GASolver::GASolver(const HFT::Graph& graph,
                    std::size_t chromosome_size,
                    bool record_selected_edges)
 : Solver{ graph, requests, max_latency, record_selected_edges }
+, m_next_gen_parents(config.population_size, 0)
+, m_cur_pop_fitness(config.population_size, 0.0)
 , m_cur_pop_buffer(config.population_size, Chromosome(chromosome_size))
 , m_next_pop_buffer(config.population_size, Chromosome(chromosome_size))
 , m_config{ config } {}
@@ -35,12 +37,10 @@ double GASolver::solve() {
     return m_best_profit;
 }
 
-std::vector<std::size_t> GASolver::select_next_gen_parents(const std::vector<double>& pop_fitness) {
-    std::vector<std::size_t> selected_parents(m_config.population_size, 0);
-    double total{ std::accumulate(pop_fitness.begin(), pop_fitness.end(), 0.0) };
-
+void GASolver::compute_next_gen_parents() {
+    double total{ std::accumulate(m_cur_pop_fitness.begin(), m_cur_pop_fitness.end(), 0.0) };
     const double step{ total / static_cast<double>(m_config.population_size) };
-    double cumulative{ pop_fitness[0] };
+    double cumulative{ m_cur_pop_fitness[0] };
 
     double pointer{ get_random_double(0.0, step) };
     std::size_t idx{ 0 };
@@ -48,18 +48,15 @@ std::vector<std::size_t> GASolver::select_next_gen_parents(const std::vector<dou
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
         while (pointer > cumulative && idx < m_config.population_size - 1) {
             ++idx;
-            cumulative += pop_fitness[idx];
+            cumulative += m_cur_pop_fitness[idx];
         }
 
-        selected_parents[i] = idx;
+        m_next_gen_parents[i] = idx;
         pointer += step;
     }
-
-    return selected_parents;
 }
 
-std::vector<double> GASolver::get_population_fitness() {
-    std::vector<double> pop_fitness(m_config.population_size, 0.0);
+void GASolver::compute_population_fitness() {
     double gen_best_profit = std::numeric_limits<double>::lowest();
     std::vector<std::size_t> gen_best_edges;
 
@@ -71,7 +68,7 @@ std::vector<double> GASolver::get_population_fitness() {
         #pragma omp for
         for (std::size_t i = 0; i < m_config.population_size; ++i) {
             FitnessPair result = get_chromosome_fitness(m_cur_pop_buffer[i]);
-            pop_fitness[i] = std::max(result.fitness, 0.0);
+            m_cur_pop_fitness[i] = std::max(result.fitness, 0.0);
 
             if (result.fitness > thread_best_profit) {
                 thread_best_profit = result.fitness;
@@ -98,8 +95,6 @@ std::vector<double> GASolver::get_population_fitness() {
             m_selected_edges = std::move(gen_best_edges);
         }
     }
-
-    return pop_fitness;
 }
 
 double GASolver::get_random_double(double min, double max) {
@@ -113,13 +108,13 @@ std::mt19937& GASolver::get_gen() {
 }
 
 void GASolver::reproduce() {
-    std::vector<double> pop_fitness{ get_population_fitness() };
-    std::vector<std::size_t> selected_parents{ select_next_gen_parents(pop_fitness) };
+    compute_population_fitness();
+    compute_next_gen_parents();
 
     #pragma omp parallel for
     for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-        m_next_pop_buffer[i] = m_cur_pop_buffer[selected_parents[i]];
-        m_next_pop_buffer[i + 1] = m_cur_pop_buffer[selected_parents[i + 1]];
+        m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
+        m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
 
         auto& parent1 = m_next_pop_buffer[i];
         auto& parent2 = m_next_pop_buffer[i + 1];

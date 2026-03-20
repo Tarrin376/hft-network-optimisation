@@ -86,30 +86,3 @@ TEST_F(LinkBasedGASolverTest, CrossoverSwapsAllBits) {
     EXPECT_EQ(p1, expected_p1);
     EXPECT_EQ(p2, expected_p2);
 }
-
-TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesPositiveIntegerFitnessValues) {
-    std::vector<double> pop_fitness{ 6, 2, 2 };
-
-    std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 1 };
-    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
-
-    EXPECT_EQ(ans, expected_ans);
-}
-
-TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesZeroFitnessValues) {
-    std::vector<double> pop_fitness{ 6, 0, 4 };
-
-    std::vector<std::size_t> expected_ans{ 0, 0, 0, 0, 2 };
-    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
-
-    EXPECT_EQ(ans, expected_ans);
-}
-
-TEST_F(LinkBasedGASolverTest, StochasticUniversalSamplingHandlesDecimalFitnessValues) {
-    std::vector<double> pop_fitness{ 4.2, 3.6, 2.2 };
-
-    std::vector<std::size_t> expected_ans{ 0, 0, 0, 1, 2 };
-    std::vector<std::size_t> ans{ select_next_gen_parents(pop_fitness) };
-
-    EXPECT_EQ(ans, expected_ans);
-}

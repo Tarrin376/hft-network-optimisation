@@ -38,13 +38,15 @@ protected:
     virtual void crossover(Chromosome& parent1, Chromosome& parent2) = 0;
     virtual void warm_cache() = 0;
 
-    virtual std::vector<std::size_t> select_next_gen_parents(const std::vector<double>& pop_fitness);
-    virtual std::vector<double> get_population_fitness();
+    virtual void compute_next_gen_parents();
+    virtual void compute_population_fitness();
     virtual double get_random_double(double min, double max);
     
     std::mt19937& get_gen();
     void reproduce();
-
+    
+    std::vector<std::size_t> m_next_gen_parents;
+    std::vector<double> m_cur_pop_fitness;
     std::vector<Chromosome> m_cur_pop_buffer;
     std::vector<Chromosome> m_next_pop_buffer;
     HFT::GAConfig m_config{};
