@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <deque>
 #include <cstdint>
 
 KSPTrie::KSPTrie() : m_root{ std::make_unique<KSPNode>() } {}
@@ -33,29 +34,21 @@ void KSPTrie::insert(const std::vector<std::size_t>& edge_indices) {
     cur->is_leaf = true;
 }
 
-std::vector<std::size_t> KSPTrie::find_matching_outgoing_edges(const std::vector<std::size_t>& edge_indices) {
+const std::deque<std::unique_ptr<KSPTrie::KSPNode>>* KSPTrie::find_matching_outgoing_edges(const std::deque<std::size_t>& root_path_edges) {
     KSPNode* cur{ m_root.get() };
     
-    for (auto edge_id : edge_indices) {
+    for (auto edge_id : root_path_edges) {
         const auto& children = cur->children;
         KSPNode* edge = get_matching_edge(children, edge_id);
         
         if (!edge) {
-            return {};
+            return nullptr;
         }
         
         cur = edge;
-    } 
+    }
     
-    const auto& children = cur->children;
-    std::vector<std::size_t> matching_outgoing_edges(children.size());
-    
-    std::transform(children.begin(), children.end(), matching_outgoing_edges.begin(),
-        [](const std::unique_ptr<KSPNode>& node) {
-            return node->edge_id;
-        });
-    
-    return matching_outgoing_edges;
+    return &cur->children;
 }
 
 bool KSPTrie::exists_exact_match(const std::vector<std::size_t>& edge_indices) {
@@ -66,7 +59,7 @@ bool KSPTrie::exists_exact_match(const std::vector<std::size_t>& edge_indices) {
         KSPNode* edge = get_matching_edge(children, edge_id);
         
         if (!edge) {
-            return {};
+            return false;
         }
         
         cur = edge;
@@ -75,7 +68,7 @@ bool KSPTrie::exists_exact_match(const std::vector<std::size_t>& edge_indices) {
     return cur->is_leaf;
 } 
 
-KSPTrie::KSPNode* KSPTrie::get_matching_edge(const std::vector<std::unique_ptr<KSPNode>>& children, std::size_t edge_id) {
+KSPTrie::KSPNode* KSPTrie::get_matching_edge(const std::deque<std::unique_ptr<KSPNode>>& children, std::size_t edge_id) {
     for (const auto& child : children) {
         if (child->edge_id == edge_id) {
             return child.get();

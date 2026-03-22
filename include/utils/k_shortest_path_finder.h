@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <vector>
+#include <deque>
+#include <utility>
 
 #include "types/graph.h"
 #include "utils/ksp_trie.h"
@@ -24,25 +26,40 @@ public:
 
     KShortestPathFinder(const HFT::Graph& graph);
 
-    std::vector<Path> find_paths(std::size_t source, std::size_t dest, int k);
+    std::deque<Path>& find_paths(std::size_t source, std::size_t dest, int k);
 
 private:
     KSPTrie m_ksp_trie{};
-
+    
     std::vector<std::uint64_t> m_disabled_edges;
     std::vector<std::uint64_t> m_disabled_nodes;
 
-    std::vector<double> m_min_latency_buffer;
+    std::vector<std::pair<double, std::uint32_t>> m_min_latency_buffer;
     std::vector<const HFT::Edge*> m_parent_edge_buffer;
-
     const HFT::Graph& m_graph;
 
-    std::vector<Path> m_k_shortest_paths{};
-    std::vector<std::size_t> m_root_path_edges{};
+    std::uint32_t m_latency_version{};
+    Path m_path_buffer{};
+
+    std::deque<Path> m_shortest_paths{};
+    std::deque<Path> m_visited_paths{};
+    std::deque<std::size_t> m_root_path_edges{};
+
+    std::vector<std::size_t> m_dirty_edges{};
+    std::vector<std::size_t> m_dirty_nodes{};
 
     Path dijkstra(std::size_t source, std::size_t dest);
 
     void disable_matching_outgoing_edges();
+
+    void disable_edge(std::size_t edge_id);
+    void disable_node(std::size_t node_id);
+
+    bool edge_is_disabled(std::size_t edge_id);
+    bool node_is_disabled(std::size_t node_id);
+
+    void clear_disabled_edges();
+    void clear_disabled_nodes();
 };
 
 #endif

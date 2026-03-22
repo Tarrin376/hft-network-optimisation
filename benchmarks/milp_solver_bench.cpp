@@ -14,7 +14,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         MILPSolver solver{ 
             graph,
             requests,
-            { "CBC" }, 
+            { "SCIP" }, 
             generator->get_config().max_latency,
             false 
         };
@@ -26,7 +26,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         MILPSolver recorder{ 
             graph,
             requests,
-            { "CBC" }, 
+            { "SCIP" }, 
             generator->get_config().max_latency,
             true 
         };

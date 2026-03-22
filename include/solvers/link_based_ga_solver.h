@@ -13,22 +13,22 @@
 #include "types/ga_solver.h"
 #include "types/solver.h"
 
-class LinkBasedGASolver : public GASolver {
+class LinkBasedGASolver : public GASolver<LinkBasedGASolver> {
 public:
+    friend class GASolver<LinkBasedGASolver>;
+
     LinkBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
                       double max_latency,
                       bool record_selected_edges);
 
-protected:
-    void mutate(Chromosome& offspring) override;
-    void crossover(Chromosome& parent1, Chromosome& parent2) override;
-
 private:
-    bool build_initial_population() override;
-    FitnessPair get_chromosome_fitness(const Chromosome& chromosome) override;
-    void warm_cache() override;
+    bool build_initial_population();
+    FitnessPair get_chromosome_fitness(const Chromosome& chromosome);
+    void mutate(Chromosome& offspring);
+    void crossover(Chromosome& parent1, Chromosome& parent2);
+    void warm_cache();
 
     std::uniform_int_distribution<int> m_crossover_dist;
 };

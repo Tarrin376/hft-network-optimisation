@@ -5,6 +5,8 @@
 #include <queue>
 #include <limits>
 #include <algorithm>
+#include <utility>
+#include <iostream>
 
 #include "types/graph.h"
 #include "types/state.h"
@@ -13,38 +15,33 @@
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     : m_disabled_edges((graph.get_num_edges() / 64) + 1)
     , m_disabled_nodes((graph.get_num_nodes() / 64) + 1)
-    , m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
+    , m_min_latency_buffer(graph.get_num_nodes(), { std::numeric_limits<double>::max(), 0 })
     , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
     , m_graph{ graph } {}
 
-std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
+std::deque<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
     Path path{ dijkstra(source, dest) };
-    m_k_shortest_paths.clear();
+    m_shortest_paths.clear();
     m_ksp_trie.reset();
 
     if (path.edge_indices.empty()) {
-        return m_k_shortest_paths;
+        return m_shortest_paths;
     }
 
     std::priority_queue<Path, std::vector<Path>, std::greater<Path>> pq{};
+    m_ksp_trie.insert(path.edge_indices);
     pq.push(std::move(path));
 
     for (int i = 0; i < k && !pq.empty(); ++i) {
-        while (pq.size() > 0) {
-            if (m_ksp_trie.exists_exact_match(pq.top().edge_indices)) pq.pop();
-            else break;
-        }
+        m_shortest_paths.push_back(std::move(pq.top()));
+        pq.pop();
 
-        if (i == k - 1 || pq.empty()) {
+        if (i == k - 1) {
             break;
         }
 
-        m_k_shortest_paths.push_back(std::move(pq.top()));
-        m_ksp_trie.insert(m_k_shortest_paths.back().edge_indices);
-        pq.pop();
-
         double root_latency = 0;
-        for (auto edge_id : m_k_shortest_paths.back().edge_indices) {
+        for (auto edge_id : m_shortest_paths.back().edge_indices) {
             const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
@@ -52,35 +49,41 @@ std::vector<KShortestPathFinder::Path> KShortestPathFinder::find_paths(std::size
             Path spur_path = dijkstra(spur_node, dest);
 
             if (!spur_path.edge_indices.empty()) {
-                Path total_path = {};
-                total_path.edge_indices = m_root_path_edges;
-                total_path.edge_indices.insert(total_path.edge_indices.end(), spur_path.edge_indices.begin(), spur_path.edge_indices.end());
-                total_path.total_latency = root_latency + spur_path.total_latency;
+                m_path_buffer.edge_indices.clear();
+                m_path_buffer.edge_indices.reserve(m_root_path_edges.size() + spur_path.edge_indices.size());
+                m_path_buffer.total_latency = root_latency + spur_path.total_latency;
+                
+                m_path_buffer.edge_indices.assign(m_root_path_edges.begin(), m_root_path_edges.end());
+                m_path_buffer.edge_indices.insert(m_path_buffer.edge_indices.end(), 
+                                                spur_path.edge_indices.begin(), 
+                                                spur_path.edge_indices.end());
 
-                pq.push(std::move(total_path));
+                if (!m_ksp_trie.exists_exact_match(m_path_buffer.edge_indices)) {
+                    m_ksp_trie.insert(m_path_buffer.edge_indices);
+                    pq.push(std::move(m_path_buffer));
+                }
             }
 
             m_root_path_edges.push_back(edge_id);
             root_latency += edge.latency;
 
-            m_disabled_nodes[spur_node / 64] |= (1ULL << (spur_node % 64));
-            m_disabled_edges.assign(m_disabled_edges.size(), 0);
+            disable_node(spur_node);
+            clear_disabled_edges();
         }
 
-        m_disabled_nodes.assign(m_disabled_nodes.size(), 0);
+        clear_disabled_nodes();
         m_root_path_edges.clear();
     }
 
-    return m_k_shortest_paths;
+    return m_shortest_paths;
 }
 
 KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
-    m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
-    m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
-
     std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
-    m_min_latency_buffer[source] = 0;
-    pq.push({0, source});
+    pq.push({0.0, source});
+
+    m_min_latency_buffer[source] = { 0.0, ++m_latency_version };
+    m_parent_edge_buffer[source] = nullptr;
 
     while (!pq.empty()) {
         const HFT::State current = pq.top();
@@ -90,7 +93,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
             break;
         }
 
-        if (current.latency > m_min_latency_buffer[current.node_id]) {
+        if (current.latency > m_min_latency_buffer[current.node_id].first) {
             continue;
         }
 
@@ -98,21 +101,26 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
         for (const auto& edge_id : node.outgoing_edges) {
             const auto& edge = m_graph.get_edge(edge_id);
 
-            if (m_disabled_edges[edge_id / 64] & (1ULL << (edge_id % 64)) || 
-                m_disabled_nodes[edge.dest / 64] & (1ULL << (edge.dest % 64))) {
+            if (edge_is_disabled(edge_id) || node_is_disabled(edge.dest)) {
                 continue;
             }
 
             double new_latency = current.latency + edge.latency;
-            if (new_latency < m_min_latency_buffer[edge.dest]) {
-                m_min_latency_buffer[edge.dest] = new_latency;
+            const auto& next_pair = m_min_latency_buffer[edge.dest];
+
+            double existing_latency = (next_pair.second == m_latency_version) 
+                          ? next_pair.first 
+                          : std::numeric_limits<double>::max();
+
+            if (new_latency < existing_latency) {
+                m_min_latency_buffer[edge.dest] = { new_latency, m_latency_version };
                 m_parent_edge_buffer[edge.dest] = &edge;
                 pq.emplace(new_latency, edge.dest);
             }
         }
     }
 
-    if (!m_parent_edge_buffer[dest]) {
+    if (m_min_latency_buffer[dest].second < m_latency_version) {
         return {};
     }
 
@@ -130,8 +138,56 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
 }
 
 void KShortestPathFinder::disable_matching_outgoing_edges() {
-    std::vector<std::size_t> outgoing_edges{ m_ksp_trie.find_matching_outgoing_edges(m_root_path_edges) };
-    for (auto edge : outgoing_edges) {
-        m_disabled_edges[edge / 64] |= (1ULL << (edge % 64));
+    const auto* outgoing_edges{ m_ksp_trie.find_matching_outgoing_edges(m_root_path_edges) };
+    if (!outgoing_edges) {
+        return;
     }
+
+    for (const auto& edge : *outgoing_edges) {
+        disable_edge(edge->edge_id);
+    }
+}
+
+void KShortestPathFinder::disable_edge(std::size_t edge_id) {
+    std::size_t block = edge_id / 64;
+    std::uint64_t mask = 1ULL << (edge_id % 64);
+    
+    if (!(m_disabled_edges[block] & mask)) {
+        m_disabled_edges[block] |= mask;
+        m_dirty_edges.push_back(edge_id);
+    }
+}
+
+void KShortestPathFinder::disable_node(std::size_t node_id) {
+    std::size_t block = node_id / 64;
+    std::uint64_t mask = 1ULL << (node_id % 64);
+
+    if (!(m_disabled_nodes[block] & mask)) {
+        m_disabled_nodes[block] |= mask;
+        m_dirty_nodes.push_back(node_id);
+    }
+}
+
+bool KShortestPathFinder::edge_is_disabled(std::size_t edge_id) {
+    return m_disabled_edges[edge_id / 64] & (1ULL << (edge_id % 64));
+}
+
+bool KShortestPathFinder::node_is_disabled(std::size_t node_id) {
+    return m_disabled_nodes[node_id / 64] & (1ULL << (node_id % 64));
+}
+
+void KShortestPathFinder::clear_disabled_edges() {
+    for (std::size_t edge_id : m_dirty_edges) {
+        m_disabled_edges[edge_id / 64] &= ~(1ULL << (edge_id % 64));
+    }
+
+    m_dirty_edges.clear();
+}
+
+void KShortestPathFinder::clear_disabled_nodes() {
+    for (std::size_t node_id : m_dirty_nodes) {
+        m_disabled_nodes[node_id / 64] &= ~(1ULL << (node_id % 64));
+    }
+
+    m_dirty_nodes.clear();
 }

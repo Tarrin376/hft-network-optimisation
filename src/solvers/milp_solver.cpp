@@ -6,9 +6,6 @@
 #include <vector>
 #include <string>
 
-#include "absl/base/log_severity.h"
-#include "absl/log/globals.h"
-#include "absl/log/log.h"
 #include "ortools/base/init_google.h"
 #include "ortools/init/init.h"
 #include "ortools/linear_solver/linear_solver.h"
@@ -29,31 +26,13 @@ MILPSolver::MILPSolver(const HFT::Graph& graph,
 }
 
 double MILPSolver::solve() {
-    if (!m_solver) {
-        LOG(ERROR) << "No solver has been set. Please set the solver and try again.";
-        return -1;
+    if (!m_solver || !m_objective_func) {
+        return std::numeric_limits<double>::lowest();
     }
 
-    if (!m_objective_func) {
-        LOG(ERROR) << "No objective function defined.";
-        return -1;
-    }
-
-    LOG(INFO) << "Solving with " << m_solver->SolverVersion();
     const or_tools::MPSolver::ResultStatus result_status = m_solver->Solve();
-
-    LOG(INFO) << "Status: " << result_status;
-
-    switch (result_status) {
-        case or_tools::MPSolver::OPTIMAL:
-            LOG(INFO) << "The problem does have an optimal solution!";
-            break;
-        case or_tools::MPSolver::FEASIBLE:
-            LOG(INFO) << "A potentially suboptimal solution was found";
-            break;
-        default:
-            LOG(WARNING) << "The solver could not solve the problem.";
-            return std::numeric_limits<double>::lowest();
+    if (result_status == or_tools::MPSolver::INFEASIBLE) {
+        return std::numeric_limits<double>::lowest();
     }
 
     double total_profit = m_objective_func->Value();
@@ -76,7 +55,6 @@ double MILPSolver::solve() {
 void MILPSolver::set_solver(const std::string& solver_id) {
     std::unique_ptr<or_tools::MPSolver> new_solver{ or_tools::MPSolver::CreateSolver(solver_id) };
     if (!new_solver) {
-        LOG(WARNING) << "Could not create solver " << solver_id;
         return;
     }
 
@@ -118,7 +96,7 @@ void MILPSolver::apply_flow_conservation_constraints() {
         const auto& req = m_requests[i];
         
         for (std::size_t v = 0; v < m_graph.get_num_nodes(); ++v) {
-            // Set the RHS (Right Hand Side) based on if v is a server, exchange, or an intermediate node
+            // Set the Right Hand Side based on if v is a server, exchange, or an intermediate node
             double rhs = v == req.server ? req.num_orders : (v == req.exchange ? -req.num_orders : 0);
             
             // Create the constraint: sum(out) - sum(in) = rhs

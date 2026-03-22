@@ -17,6 +17,7 @@ list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.cpp")
 
 add_library(hft_lib ${LIB_SOURCES})
 target_include_directories(hft_lib PUBLIC include)
+target_compile_options(hft_lib PUBLIC -O3 -march=native)
 
 # OpenMP
 find_package(OpenMP)
@@ -61,4 +62,3 @@ FetchContent_MakeAvailable(benchmark)
 file(GLOB_RECURSE BENCH_SOURCES benchmarks/*.cpp)
 add_executable(bench ${BENCH_SOURCES})
 target_link_libraries(bench PRIVATE benchmark::benchmark hft_lib)
-

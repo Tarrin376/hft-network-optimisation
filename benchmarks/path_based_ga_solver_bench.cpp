@@ -11,7 +11,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
     double profit_sum{ 0.0 };
 
-    const int num_shortest_paths{ 40 };
+    const int num_shortest_paths{ 64 };
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
@@ -19,8 +19,8 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     const HFT::ExpectedRequests& requests{ generator->get_requests() };
 
     HFT::GAConfig solver_config {
-        .population_size{ 70 },
-        .generations{ 1300 },
+        .population_size{ 200 },
+        .generations{ 1400 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
@@ -50,27 +50,27 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         }
     }
 
-    if (best_profit > std::numeric_limits<double>::lowest()) {
-        PathBasedGASolver recorder{ 
-            graph,
-            requests,
-            { .seed = best_seed },
-            generator->get_config().max_latency, 
-            num_shortest_paths, 
-            true
-        };
+    // if (best_profit > std::numeric_limits<double>::lowest()) {
+    //     PathBasedGASolver recorder{ 
+    //         graph,
+    //         requests,
+    //         { .seed = best_seed },
+    //         generator->get_config().max_latency, 
+    //         num_shortest_paths, 
+    //         true
+    //     };
 
-        recorder.solve();
-        auto edges = recorder.get_selected_edges();
+    //     recorder.solve();
+    //     auto edges = recorder.get_selected_edges();
 
-        static int id{ 0 };
-        id++;
+    //     static int id{ 0 };
+    //     id++;
 
-        Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
-        Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
-        Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
-        Logger::log_optimal_network(edges, "ANS_" + std::to_string(id) + ".csv");
-    }
+    //     Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
+    //     Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
+    //     Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
+    //     Logger::log_optimal_network(edges, "ANS_" + std::to_string(id) + ".csv");
+    // }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : 0;
     state.counters["BestProfit"] = best_profit;
@@ -81,6 +81,6 @@ BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
     ->Apply(SolverFixture::ScalingArguments)
     ->Unit(benchmark::kMillisecond)
     ->UseRealTime()
-    ->Iterations(1);
+    ->Iterations(30);
 
 BENCHMARK_MAIN();

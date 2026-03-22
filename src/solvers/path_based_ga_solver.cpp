@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+#include <deque>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -43,9 +44,9 @@ bool PathBasedGASolver::build_initial_population() {
     return true;
 }
 
-GASolver::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
-    std::vector<int> path_flow(m_graph.get_num_edges(), 0);
-    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() / 64) + 1, 0);
+GASolver<PathBasedGASolver>::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+    std::vector<int> path_flow(m_graph.get_num_edges());
+    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() / 64) + 1);
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
@@ -56,7 +57,7 @@ GASolver::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome
         std::uint64_t mask = 1ULL;
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
-            if ((chromosome[i] & mask) > 0) {
+            if (chromosome[i] & mask) {
                 PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining_orders);
                 remaining_orders -= path_penalty.processed_orders;
                 request_profit -= path_penalty.penalty;
@@ -74,12 +75,12 @@ GASolver::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome
         path_flow.assign(path_flow.size(), 0);
     }
 
-    std::vector<std::size_t> selected_edges{};
+    std::deque<std::size_t> selected_edges{};
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         std::size_t block_idx = i / 64;
         std::size_t bit_idx = i % 64;
 
-        if ((used_edges[block_idx] & (1ULL << bit_idx)) > 0) {
+        if (used_edges[block_idx] & (1ULL << bit_idx)) {
             total_profit -= m_graph.get_edge(i).lease_cost;
             if (m_record_selected_edges) {
                 selected_edges.push_back(i);
@@ -128,7 +129,7 @@ void PathBasedGASolver::initialise_path_pool(int num_shortest_paths) {
         #pragma omp for
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& request = m_requests[i];
-            m_path_pool[i] = ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths);
+            m_path_pool[i] = std::move(ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths));
         }
     }
 }

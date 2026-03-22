@@ -8,6 +8,7 @@
 #include <random>
 #include <numeric>
 #include <cassert>
+#include <deque>
 
 #include "utils/bit_utils.h"
 #include "types/expected_requests.h"
@@ -55,7 +56,7 @@ void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
 void LinkBasedGASolver::mutate(Chromosome& offspring) {
     std::geometric_distribution<std::size_t> skip_dist(m_config.mutation_rate);
 
-    std::size_t total_bits = offspring.size() * 64;
+    const std::size_t total_bits = offspring.size() * 64;
     std::size_t current_bit = skip_dist(get_gen());
 
     while (current_bit < total_bits) {
@@ -68,7 +69,7 @@ void LinkBasedGASolver::mutate(Chromosome& offspring) {
 }
 
 bool LinkBasedGASolver::build_initial_population() {
-    std::size_t num_edges{ m_graph.get_num_edges() };
+    const std::size_t num_edges{ m_graph.get_num_edges() };
     
     #pragma omp parallel for
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
@@ -90,18 +91,17 @@ bool LinkBasedGASolver::build_initial_population() {
     return true;
 }
 
-GASolver::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+GASolver<LinkBasedGASolver>::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
     static thread_local SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
-    double fitness{ evaluator.evaluate(chromosome) };
+    const double fitness{ evaluator.evaluate(chromosome) };
 
     if (!m_record_selected_edges) {
         return { fitness };
     }
 
-    std::vector<std::size_t> selected_edges{};
+    std::deque<std::size_t> selected_edges{};
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
-        bool is_selected = (chromosome[i / 64] & (1ULL << (i % 64))) > 0;
-        if (is_selected) {
+        if (chromosome[i / 64] & (1ULL << (i % 64))) {
             selected_edges.push_back(i);
         }
     }

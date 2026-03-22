@@ -45,7 +45,7 @@ def visualize_network(nodes_csv, edges_csv, requests_csv, answer_csv, output_htm
             f"Source: {src}\n"
             f"Dest: {dest}\n"
             f"Rate Limit: {rate_limit}\n"
-            f"Latency: {latency}ms\n"
+            f"Latency: {latency} microseconds\n"
             f"Lease Cost: £{cost}"
         )
 

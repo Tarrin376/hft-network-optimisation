@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <functional>
+#include <deque>
 
 #include "types/expected_requests.h"
 #include "types/graph.h"
@@ -24,7 +25,7 @@ protected:
     const double m_max_latency{};
     const bool m_record_selected_edges{};
     
-    std::vector<std::size_t> m_selected_edges{};
+    std::deque<std::size_t> m_selected_edges{};
 };
 
 #endif
