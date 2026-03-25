@@ -19,8 +19,8 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     const HFT::ExpectedRequests& requests{ generator->get_requests() };
 
     HFT::GAConfig solver_config {
-        .population_size{ 200 },
-        .generations{ 1400 },
+        .population_size{ 500 },
+        .generations{ 700 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
