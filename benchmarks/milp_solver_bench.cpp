@@ -14,7 +14,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         MILPSolver solver{ 
             graph,
             requests,
-            { "SCIP" }, 
+            { "HiGHS" }, 
             generator->get_config().max_latency,
             false 
         };
@@ -23,31 +23,30 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
     }
 
     if (best_profit > std::numeric_limits<double>::lowest()) {
-        MILPSolver recorder{ 
-            graph,
-            requests,
-            { "SCIP" }, 
-            generator->get_config().max_latency,
-            true 
-        };
+       MILPSolver recorder{ 
+           graph,
+           requests,
+           { "HiGHS" }, 
+           generator->get_config().max_latency,
+           true 
+       };
 
-        recorder.solve();
-        auto edges = recorder.get_selected_edges();
+       recorder.solve();
+       auto edges = recorder.get_selected_edges();
 
-        static int id{ 0 };
-        id++;
+       static int id{ 0 };
+       id++;
 
-        Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
-        Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
-        Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
-        Logger::log_optimal_network(edges, "ANS_" + std::to_string(id) + ".csv");
+       Logger::log_nodes(graph, "NODES_MILP_" + std::to_string(id) + ".csv");
+       Logger::log_edges(graph, "EDGES_MILP_" + std::to_string(id) + ".csv");
+       Logger::log_requests(requests, "REQUESTS_MILP_" + std::to_string(id) + ".csv");
+       Logger::log_optimal_network(edges, "ANS_MILP_" + std::to_string(id) + ".csv");
     }
 
     state.counters["BestProfit"] = best_profit;
 }
 
 // BENCHMARK_REGISTER_F(SolverFixture, MILPSolver)
-//     ->Apply(SolverFixture::ScalingArguments)
-//     ->Unit(benchmark::kMillisecond)
-//     ->UseRealTime()
-//     ->Iterations(1);
+//    ->Apply(SolverFixture::ScalingArguments)
+//    ->Unit(benchmark::kMillisecond)
+//    ->Iterations(1);

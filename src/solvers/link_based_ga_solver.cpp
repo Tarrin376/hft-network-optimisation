@@ -1,16 +1,10 @@
-#ifndef GENETIC_ALGORITHM_SOLVER_H
-#define GENETIC_ALGORITHM_SOLVER_H
-
 #include "solvers/link_based_ga_solver.h"
 
 #include <vector>
 #include <cstdint>
-#include <random>
-#include <numeric>
-#include <cassert>
-#include <deque>
 
 #include "utils/bit_utils.h"
+#include "utils/random_utils.h"
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
@@ -21,13 +15,13 @@ LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph,
                                      const HFT::GAConfig& config,
                                      double max_latency,
                                      bool record_selected_edges)
-: GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() / 64) + 1, record_selected_edges }
+: GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() + 63) / 64, record_selected_edges }
 , m_crossover_dist(0, graph.get_num_edges() - 1) {
     warm_cache();
 }
 
-void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
-    if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
+void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
+    if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.crossover_rate) {
         return;
     }
     
@@ -53,18 +47,18 @@ void LinkBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
     }
 }
 
-void LinkBasedGASolver::mutate(Chromosome& offspring) {
-    std::geometric_distribution<std::size_t> skip_dist(m_config.mutation_rate);
+void LinkBasedGASolver::mutate(HFT::Chromosome& offspring) {
+    std::geometric_distribution<int> skip_dist(m_config.mutation_rate);
 
     const std::size_t total_bits = offspring.size() * 64;
-    std::size_t current_bit = skip_dist(get_gen());
+    std::size_t current_bit = static_cast<std::size_t>(skip_dist(get_gen()));
 
     while (current_bit < total_bits) {
         std::size_t block_idx = current_bit / 64;
         std::size_t bit_idx = current_bit % 64;
 
         offspring[block_idx] ^= (1ULL << bit_idx);
-        current_bit += (1 + skip_dist(get_gen())); 
+        current_bit += (1 + static_cast<std::size_t>(skip_dist(get_gen()))); 
     }
 }
 
@@ -74,15 +68,15 @@ bool LinkBasedGASolver::build_initial_population() {
     #pragma omp parallel for
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
         for (std::size_t j = 0; j < num_edges; ++j) {
-            if (i == 0 || get_random_double(0.0, 1.0) < m_config.initial_bit_flip_rate) {
+            if (i == 0 || RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.initial_bit_flip_rate) {
                 m_cur_pop_buffer[i][j / 64] |= (1ULL << (j % 64));
             }
         }
     }
 
-    Chromosome random(num_edges / 64 + 1);
+    HFT::Chromosome random((num_edges + 63) / 64);
     for (std::size_t i = 0; i < num_edges; ++i) {
-        if (get_random_double(0.0, 1.0) < 0.5) {
+        if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
             random[i / 64] |= (1ULL << (i % 64));
         }
     }
@@ -91,15 +85,17 @@ bool LinkBasedGASolver::build_initial_population() {
     return true;
 }
 
-GASolver<LinkBasedGASolver>::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
-    static thread_local SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
+HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
+    SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
     const double fitness{ evaluator.evaluate(chromosome) };
 
     if (!m_record_selected_edges) {
         return { fitness };
     }
 
-    std::deque<std::size_t> selected_edges{};
+    std::vector<std::size_t> selected_edges{};
+    selected_edges.reserve(m_graph.get_num_edges());
+    
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         if (chromosome[i / 64] & (1ULL << (i % 64))) {
             selected_edges.push_back(i);
@@ -129,5 +125,3 @@ void LinkBasedGASolver::warm_cache() {
         }
     }
 }
-
-#endif

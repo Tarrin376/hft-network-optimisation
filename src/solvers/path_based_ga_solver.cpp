@@ -3,14 +3,13 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
-#include <algorithm>
-#include <deque>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
 #include "utils/k_shortest_path_finder.h"
+#include "utils/random_utils.h"
 
 PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph, 
                                      const HFT::ExpectedRequests& requests, 
@@ -44,9 +43,9 @@ bool PathBasedGASolver::build_initial_population() {
     return true;
 }
 
-GASolver<PathBasedGASolver>::FitnessPair PathBasedGASolver::get_chromosome_fitness(const Chromosome& chromosome) {
+HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
     std::vector<int> path_flow(m_graph.get_num_edges());
-    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() / 64) + 1);
+    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() + 63) / 64);
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
@@ -75,7 +74,9 @@ GASolver<PathBasedGASolver>::FitnessPair PathBasedGASolver::get_chromosome_fitne
         path_flow.assign(path_flow.size(), 0);
     }
 
-    std::deque<std::size_t> selected_edges{};
+    std::vector<std::size_t> selected_edges{};
+    selected_edges.reserve(m_graph.get_num_edges());
+    
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         std::size_t block_idx = i / 64;
         std::size_t bit_idx = i % 64;
@@ -91,11 +92,11 @@ GASolver<PathBasedGASolver>::FitnessPair PathBasedGASolver::get_chromosome_fitne
     return { total_profit, selected_edges };
 }
 
-void PathBasedGASolver::mutate(Chromosome& offspring) {
+void PathBasedGASolver::mutate(HFT::Chromosome& offspring) {
     for (std::size_t i = 0; i < offspring.size(); ++i) {
         std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
-            if (get_random_double(0.0, 1.0) < m_config.mutation_rate) {
+            if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.mutation_rate) {
                 offspring[i] ^= mask;
             }
 
@@ -104,11 +105,11 @@ void PathBasedGASolver::mutate(Chromosome& offspring) {
     }
 }
 
-void PathBasedGASolver::crossover(Chromosome& parent1, Chromosome& parent2) {
+void PathBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
     for (std::size_t i = 0; i < parent1.size(); ++i) {
         std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
-            if (get_random_double(0.0, 1.0) < m_config.crossover_rate) {
+            if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.crossover_rate) {
                 std::uint64_t p1_mask = parent1[i] & mask;
                 std::uint64_t p2_mask = parent2[i] & mask;
 
@@ -138,11 +139,11 @@ void PathBasedGASolver::build_greedy_group(std::size_t start_idx, std::size_t en
     #pragma omp parallel for
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
-            if (m_path_pool[j].size() > 0 && get_random_double(0.0, 1.0) < 0.5) {
+            if (m_path_pool[j].size() > 0 && RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
                 m_cur_pop_buffer[i][j] |= (1ULL << 0); 
             }
 
-            if (m_path_pool[j].size() > 1 && get_random_double(0.0, 1.0) < 0.5) {
+            if (m_path_pool[j].size() > 1 && RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
                 m_cur_pop_buffer[i][j] |= (1ULL << 1);
             }
         }
@@ -195,7 +196,7 @@ void PathBasedGASolver::build_random_group(std::size_t start_idx, std::size_t en
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
             std::uint64_t mask = 1ULL;
             for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
-                if (get_random_double(0.0, 1.0) < 0.5) {
+                if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
                     m_cur_pop_buffer[i][j] |= mask;
                 }
 

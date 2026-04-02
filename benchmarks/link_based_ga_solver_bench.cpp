@@ -4,14 +4,13 @@
 #include <benchmark/benchmark.h>
 
 #include "bench_utils/solver_fixture.h"
-#include "solvers/path_based_ga_solver.h"
+#include "solvers/link_based_ga_solver.h"
 #include "utils/logger.h"
 
-BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
     double profit_sum{ 0.0 };
 
-    const int num_shortest_paths{ 30 };
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
@@ -29,12 +28,11 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         unsigned long long current_seed = solver_seed_gen();
         solver_config.seed = current_seed;
         
-        PathBasedGASolver solver{ 
+        LinkBasedGASolver solver{ 
             graph,
             requests,
             solver_config, 
             generator->get_config().max_latency,
-            num_shortest_paths,
             false 
         };
 
@@ -50,34 +48,36 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         }
     }
 
-    // if (best_profit > std::numeric_limits<double>::lowest()) {
-    //     PathBasedGASolver recorder{ 
-    //         graph,
-    //         requests,
-    //         { .seed = best_seed },
-    //         generator->get_config().max_latency, 
-    //         num_shortest_paths, 
-    //         true
-    //     };
+    if (best_profit > std::numeric_limits<double>::lowest()) {
+        LinkBasedGASolver recorder{ 
+            graph,
+            requests,
+            solver_config, 
+            generator->get_config().max_latency,
+            true 
+        };
 
-    //     recorder.solve();
-    //     auto edges = recorder.get_selected_edges();
+        recorder.solve();
+        auto edges = recorder.get_selected_edges();
 
-    //     static int id{ 0 };
-    //     id++;
+        static int id{ 0 };
+        id++;
 
-    //     Logger::log_nodes(graph, "NODES_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_edges(graph, "EDGES_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_requests(requests, "REQUESTS_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
-    // }
+        Logger::log_nodes(graph, "NODES_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_edges(graph, "EDGES_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_requests(requests, "REQUESTS_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_LB_GA" + std::to_string(id) + ".csv");
+    }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : 0;
     state.counters["BestProfit"] = best_profit;
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
-BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
-   ->Apply(SolverFixture::ScalingArguments)
-   ->Unit(benchmark::kMillisecond)
-   ->Iterations(30);
+// BENCHMARK_REGISTER_F(SolverFixture, LinkBasedGA)
+//     ->Apply(SolverFixture::ScalingArguments)
+//     ->Unit(benchmark::kMillisecond)
+//     ->Iterations(30);
+
+BENCHMARK_MAIN();
+

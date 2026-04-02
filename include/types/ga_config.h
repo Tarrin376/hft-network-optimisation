@@ -3,11 +3,11 @@
 
 namespace HFT {
     struct GAConfig {
-        int population_size{ 70 };
-        int generations{ 1000 };
-        double mutation_rate{ 0.05 };
+        int population_size{ 300 };
+        int generations{ 700 };
+        double mutation_rate{ 0.08 };
         double crossover_rate{ 0.8 };
-        double initial_bit_flip_rate{ 0.01 };
+        double initial_bit_flip_rate{ 0.05 };
         unsigned long long seed{ 34ULL };
     };
 }

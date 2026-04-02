@@ -1,27 +1,39 @@
-#ifndef I_GENETIC_H
-#define I_GENETIC_H
+#ifndef GA_SOLVER_H
+#define GA_SOLVER_H
 
 #include <vector>
 #include <cstdint>
 #include <limits>
 #include <random>
-#include <deque>
+#include <numeric>
+#include <concepts>
 
 #include "types/solver.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
 #include "types/expected_requests.h"
 
-template <typename T>
-class GASolver : public Solver {
-public:
+namespace HFT {
     using Chromosome = std::vector<std::uint64_t>;
 
     struct FitnessPair {
         double fitness;
-        std::deque<std::size_t> selected_edges;
+        std::vector<std::size_t> selected_edges;
     };
 
+    template <typename SelectionStrategy>
+    concept IsSelectionStrategy = requires(
+        SelectionStrategy strategy, 
+        const std::vector<double>& fitness, 
+        std::vector<std::size_t>& next_gen_parents, 
+        std::mt19937& gen) {
+        { strategy.run(fitness, next_gen_parents, gen) } -> std::same_as<void>;
+    };
+}
+
+template <typename T, HFT::IsSelectionStrategy SelectionStrategy>
+class GASolver : public Solver {
+public:
     virtual ~GASolver() = default;
 
     double solve() override final {
@@ -42,15 +54,15 @@ protected:
         return static_cast<T*>(this)->build_initial_population();
     }
 
-    FitnessPair get_chromosome_fitness(const Chromosome& chromosome) {
+    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome) {
         return static_cast<T*>(this)->get_chromosome_fitness(chromosome);
     }
 
-    void mutate(Chromosome& offspring) {
+    void mutate(HFT::Chromosome& offspring) {
         return static_cast<T*>(this)->mutate(offspring);
     }
 
-    void crossover(Chromosome& parent1, Chromosome& parent2) {
+    void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
         return static_cast<T*>(this)->crossover(parent1, parent2);
     }
 
@@ -59,36 +71,22 @@ protected:
     }
 
     void compute_next_gen_parents() {
-        double total{ std::accumulate(m_cur_pop_fitness.begin(), m_cur_pop_fitness.end(), 0.0) };
-        const double step{ total / static_cast<double>(m_config.population_size) };
-        double cumulative{ m_cur_pop_fitness[0] };
-
-        double pointer{ get_random_double(0.0, step) };
-        std::size_t idx{ 0 };
-
-        for (std::size_t i = 0; i < m_config.population_size; ++i) {
-            while (pointer > cumulative && idx < m_config.population_size - 1) {
-                ++idx;
-                cumulative += m_cur_pop_fitness[idx];
-            }
-
-            m_next_gen_parents[i] = idx;
-            pointer += step;
-        }
+        SelectionStrategy strategy{};
+        strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
     }
 
     void compute_population_fitness() {
         double gen_best_profit = std::numeric_limits<double>::lowest();
-        std::deque<std::size_t> gen_best_edges;
+        std::vector<std::size_t> gen_best_edges;
 
         #pragma omp parallel
         {
             double thread_best_profit = std::numeric_limits<double>::lowest();
-            std::deque<std::size_t> thread_best_edges;
+            std::vector<std::size_t> thread_best_edges;
 
             #pragma omp for
             for (std::size_t i = 0; i < m_config.population_size; ++i) {
-                FitnessPair result = get_chromosome_fitness(m_cur_pop_buffer[i]);
+                HFT::FitnessPair result = get_chromosome_fitness(m_cur_pop_buffer[i]);
                 m_cur_pop_fitness[i] = std::max(result.fitness, 0.0);
 
                 if (result.fitness > thread_best_profit) {
@@ -116,11 +114,6 @@ protected:
                 m_selected_edges = std::move(gen_best_edges);
             }
         }
-    }
-
-    double get_random_double(double min, double max) {
-        static thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
-        return min + (max - min) * dist(get_gen());
     }
     
     std::mt19937& get_gen() {
@@ -150,8 +143,8 @@ protected:
     
     std::vector<std::size_t> m_next_gen_parents;
     std::vector<double> m_cur_pop_fitness;
-    std::vector<Chromosome> m_cur_pop_buffer;
-    std::vector<Chromosome> m_next_pop_buffer;
+    std::vector<HFT::Chromosome> m_cur_pop_buffer;
+    std::vector<HFT::Chromosome> m_next_pop_buffer;
     HFT::GAConfig m_config{};
     
     double m_best_profit{ std::numeric_limits<double>::lowest() };
@@ -166,8 +159,8 @@ private:
         : Solver{ graph, requests, max_latency, record_selected_edges }
         , m_next_gen_parents(config.population_size, 0)
         , m_cur_pop_fitness(config.population_size, 0.0)
-        , m_cur_pop_buffer(config.population_size, Chromosome(chromosome_size))
-        , m_next_pop_buffer(config.population_size, Chromosome(chromosome_size))
+        , m_cur_pop_buffer(config.population_size, HFT::Chromosome(chromosome_size))
+        , m_next_pop_buffer(config.population_size, HFT::Chromosome(chromosome_size))
         , m_config{ config } {}
     
     friend T;

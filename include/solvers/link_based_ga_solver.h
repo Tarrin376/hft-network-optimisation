@@ -12,10 +12,11 @@
 #include "types/graph.h"
 #include "types/ga_solver.h"
 #include "types/solver.h"
+#include "strategies/stochastic_universal_sampling.h"
 
-class LinkBasedGASolver : public GASolver<LinkBasedGASolver> {
+class LinkBasedGASolver final : public GASolver<LinkBasedGASolver, StochasticUniversalSampling> {
 public:
-    friend class GASolver<LinkBasedGASolver>;
+    friend class GASolver<LinkBasedGASolver, StochasticUniversalSampling>;
 
     LinkBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
@@ -25,9 +26,9 @@ public:
 
 private:
     bool build_initial_population();
-    FitnessPair get_chromosome_fitness(const Chromosome& chromosome);
-    void mutate(Chromosome& offspring);
-    void crossover(Chromosome& parent1, Chromosome& parent2);
+    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
+    void mutate(HFT::Chromosome& offspring);
+    void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
     void warm_cache();
 
     std::uniform_int_distribution<int> m_crossover_dist;

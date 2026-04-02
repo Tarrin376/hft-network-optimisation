@@ -12,17 +12,11 @@
 #include "types/graph.h"
 #include "types/ga_solver.h"
 #include "utils/k_shortest_path_finder.h"
+#include "strategies/stochastic_universal_sampling.h"
 
-class PathBasedGASolver : public GASolver<PathBasedGASolver> {
+class PathBasedGASolver final : public GASolver<PathBasedGASolver, StochasticUniversalSampling> {
 public:
-    friend class GASolver<PathBasedGASolver>;
-    
-    using PathPool = std::vector<std::deque<KShortestPathFinder::Path>>;
-
-    struct PathPenalty {
-        double penalty{};
-        int processed_orders{};
-    };
+    friend class GASolver<PathBasedGASolver, StochasticUniversalSampling>;
 
     PathBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
@@ -32,10 +26,17 @@ public:
                       bool record_selected_edges);
 
 private:
+    using PathPool = std::vector<std::deque<KShortestPathFinder::Path>>;
+    
+    struct PathPenalty {
+        double penalty{};
+        int processed_orders{};
+    };
+
     bool build_initial_population();
-    FitnessPair get_chromosome_fitness(const Chromosome& chromosome);
-    void mutate(Chromosome& offspring);
-    void crossover(Chromosome& parent1, Chromosome& parent2);
+    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
+    void mutate(HFT::Chromosome& offspring);
+    void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
     void warm_cache();
 
     void initialise_path_pool(int num_shortest_paths);
