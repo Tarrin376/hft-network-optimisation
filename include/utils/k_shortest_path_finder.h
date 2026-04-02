@@ -3,8 +3,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <deque>
-#include <utility>
 
 #include "types/graph.h"
 #include "utils/ksp_trie.h"
@@ -26,7 +24,7 @@ public:
 
     KShortestPathFinder(const HFT::Graph& graph);
 
-    std::deque<Path>& find_paths(std::size_t source, std::size_t dest, int k);
+    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, int k);
 
 private:
     KSPTrie m_ksp_trie{};
@@ -41,9 +39,8 @@ private:
     std::uint32_t m_latency_version{};
     Path m_path_buffer{};
 
-    std::deque<Path> m_shortest_paths{};
-    std::deque<Path> m_visited_paths{};
-    std::deque<std::size_t> m_root_path_edges{};
+    std::vector<Path> m_shortest_paths{};
+    std::vector<std::size_t> m_root_path_edges{};
 
     std::vector<std::size_t> m_dirty_edges{};
     std::vector<std::size_t> m_dirty_nodes{};

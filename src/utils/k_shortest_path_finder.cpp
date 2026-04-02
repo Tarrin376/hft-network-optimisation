@@ -19,10 +19,12 @@ KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
     , m_graph{ graph } {}
 
-std::deque<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
+std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
     Path path{ dijkstra(source, dest) };
-    m_shortest_paths.clear();
     m_ksp_trie.reset();
+
+    m_shortest_paths.clear();
+    m_shortest_paths.reserve(k);
 
     if (path.edge_indices.empty()) {
         return m_shortest_paths;
@@ -40,8 +42,12 @@ std::deque<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size
             break;
         }
 
+        const std::vector<std::size_t>& edge_indices = m_shortest_paths.back().edge_indices;
+        m_root_path_edges.reserve(edge_indices.size());
+        m_dirty_nodes.reserve(edge_indices.size());
+
         double root_latency = 0;
-        for (auto edge_id : m_shortest_paths.back().edge_indices) {
+        for (auto edge_id : edge_indices) {
             const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 

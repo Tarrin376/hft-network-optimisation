@@ -11,6 +11,8 @@
 #include "utils/k_shortest_path_finder.h"
 #include "utils/random_utils.h"
 
+thread_local PathBasedGASolver::Scratchpad PathBasedGASolver::m_t_scratch;
+
 PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph, 
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
@@ -44,8 +46,8 @@ bool PathBasedGASolver::build_initial_population() {
 }
 
 HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
-    std::vector<int> path_flow(m_graph.get_num_edges());
-    std::vector<std::uint64_t> used_edges((m_graph.get_num_edges() + 63) / 64);
+    std::size_t num_edges{ m_graph.get_num_edges() };
+    m_t_scratch.ensure_capacity(num_edges);
     double total_profit{ 0.0 };
 
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
@@ -57,7 +59,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
 
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
             if (chromosome[i] & mask) {
-                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, path_flow, used_edges, remaining_orders);
+                PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, remaining_orders);
                 remaining_orders -= path_penalty.processed_orders;
                 request_profit -= path_penalty.penalty;
             }
@@ -71,24 +73,25 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
             total_profit += request_profit;
         }
 
-        path_flow.assign(path_flow.size(), 0);
+        m_t_scratch.path_flow.assign(m_t_scratch.path_flow.size(), 0);
     }
 
     std::vector<std::size_t> selected_edges{};
-    selected_edges.reserve(m_graph.get_num_edges());
-    
-    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
-        std::size_t block_idx = i / 64;
-        std::size_t bit_idx = i % 64;
+    if (m_record_selected_edges) {
+        selected_edges.reserve(m_t_scratch.dirty_indices.size());
+    }
 
-        if (used_edges[block_idx] & (1ULL << bit_idx)) {
-            total_profit -= m_graph.get_edge(i).lease_cost;
-            if (m_record_selected_edges) {
-                selected_edges.push_back(i);
-            }
+    for (auto edge_id : m_t_scratch.dirty_indices) {
+        total_profit -= m_graph.get_edge(edge_id).lease_cost;
+        m_t_scratch.used_edges[edge_id / 64] &= ~(1ULL << (edge_id % 64));
+        m_t_scratch.path_flow[edge_id] = 0;
+
+        if (m_record_selected_edges) {
+            selected_edges.push_back(edge_id);
         }
     }
 
+    m_t_scratch.dirty_indices.clear();
     return { total_profit, selected_edges };
 }
 
@@ -208,13 +211,11 @@ void PathBasedGASolver::build_random_group(std::size_t start_idx, std::size_t en
 
 PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShortestPathFinder::Path& path, 
                                                                    const HFT::Request& request, 
-                                                                   std::vector<int>& path_flow,
-                                                                   std::vector<std::uint64_t>& used_edges,
                                                                    int remaining_orders) {
     int bottleneck_capacity{ std::numeric_limits<int>::max() };
 
     for (auto edge_id : path.edge_indices) {
-        int edge_capacity = m_graph.get_edge(edge_id).rate_limit * request.planning_horizon - path_flow[edge_id];
+        int edge_capacity = m_graph.get_edge(edge_id).rate_limit * request.planning_horizon - m_t_scratch.path_flow[edge_id];
         bottleneck_capacity = std::min(bottleneck_capacity, edge_capacity);
     }
 
@@ -225,8 +226,9 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         const auto& edge = m_graph.get_edge(edge_id);
         double penalty = processed_orders * request.max_order_profit * (edge.latency / m_max_latency);
 
-        path_flow[edge_id] += processed_orders;
-        used_edges[edge_id / 64] |= (1ULL << (edge_id % 64));
+        m_t_scratch.path_flow[edge_id] += processed_orders;
+        m_t_scratch.used_edges[edge_id / 64] |= (1ULL << (edge_id % 64));
+        m_t_scratch.dirty_indices.push_back(edge_id);
         path_penalty += penalty;
     }
 

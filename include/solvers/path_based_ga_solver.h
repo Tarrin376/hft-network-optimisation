@@ -4,7 +4,6 @@
 #include <vector>
 #include <cstdint>
 #include <random>
-#include <deque>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -26,11 +25,25 @@ public:
                       bool record_selected_edges);
 
 private:
-    using PathPool = std::vector<std::deque<KShortestPathFinder::Path>>;
+    using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
     
     struct PathPenalty {
         double penalty{};
         int processed_orders{};
+    };
+
+    struct Scratchpad {
+        std::vector<int> path_flow;
+        std::vector<std::uint64_t> used_edges;
+        std::vector<std::size_t> dirty_indices;
+
+        void ensure_capacity(std::size_t num_edges) {
+            if (path_flow.size() < num_edges) {
+                path_flow.assign(num_edges, 0);
+                used_edges.assign((num_edges + 63) / 64, 0);
+                dirty_indices.reserve(num_edges / 10);
+            }
+        }
     };
 
     bool build_initial_population();
@@ -46,8 +59,6 @@ private:
 
     PathPenalty get_path_penalty(const KShortestPathFinder::Path& path, 
                                  const HFT::Request& request,
-                                 std::vector<int>& path_flow,
-                                 std::vector<std::uint64_t>& used_edges,
                                  int remaining_orders);
 
     PathPool m_path_pool;
@@ -55,6 +66,7 @@ private:
 
     const double GREEDY_GROUP_PERC{ 0.25 };
     const double EDGE_SHARING_GROUP_PERC{ 0.5 };
+    static thread_local Scratchpad m_t_scratch;
 };
 
 #endif

@@ -71,8 +71,7 @@ protected:
     }
 
     void compute_next_gen_parents() {
-        SelectionStrategy strategy{};
-        strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
+        m_strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
     }
 
     void compute_population_fitness() {
@@ -145,7 +144,9 @@ protected:
     std::vector<double> m_cur_pop_fitness;
     std::vector<HFT::Chromosome> m_cur_pop_buffer;
     std::vector<HFT::Chromosome> m_next_pop_buffer;
+    
     HFT::GAConfig m_config{};
+    SelectionStrategy m_strategy{};
     
     double m_best_profit{ std::numeric_limits<double>::lowest() };
 

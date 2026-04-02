@@ -94,7 +94,7 @@ HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     }
 
     std::vector<std::size_t> selected_edges{};
-    selected_edges.reserve(m_graph.get_num_edges());
+    selected_edges.reserve(m_graph.get_num_nodes());
     
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         if (chromosome[i / 64] & (1ULL << (i % 64))) {
