@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <ranges>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -23,15 +24,14 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
 , m_path_pool(requests.size())
 , m_anchor_dist(0, requests.size() - 1) {
     initialise_path_pool(std::min(num_shortest_paths, 64));
-    warm_cache();
 }
 
 bool PathBasedGASolver::build_initial_population() {
-    bool not_solvable{ std::any_of(m_path_pool.begin(), m_path_pool.end(), [](const auto& paths) -> bool {
+    auto empty_paths{ std::ranges::find_if(m_path_pool, [](const auto& paths) -> bool {
         return paths.empty();
     }) };
 
-    if (not_solvable) {
+    if (empty_paths != std::ranges::end(m_path_pool)) {
         return false;
     }
 
@@ -48,8 +48,8 @@ bool PathBasedGASolver::build_initial_population() {
 HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
     std::size_t num_edges{ m_graph.get_num_edges() };
     m_t_scratch.ensure_capacity(num_edges);
-    double total_profit{ 0.0 };
 
+    double total_profit{ 0.0 };
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& request = m_requests[i];
         int remaining_orders = request.num_orders;
@@ -76,7 +76,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
         m_t_scratch.path_flow.assign(m_t_scratch.path_flow.size(), 0);
     }
 
-    std::vector<std::size_t> selected_edges{};
+    std::vector<std::size_t> selected_edges;
     if (m_record_selected_edges) {
         selected_edges.reserve(m_t_scratch.dirty_indices.size());
     }
@@ -233,29 +233,4 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
     }
 
     return { path_penalty, processed_orders };
-}
-
-void PathBasedGASolver::warm_cache() {
-    // 'volatile' prevents the compiler from optimising the loop away
-    volatile double sum_warm{ 0 };
-
-    for (const auto& req : m_requests) {
-        sum_warm += req.num_orders + req.server;
-    }
-
-    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
-        const auto& edge = m_graph.get_edge(i);
-        sum_warm += edge.latency + edge.rate_limit;
-    }
-
-    for (std::size_t i = 0; i < m_requests.size(); ++i) {
-        for (std::size_t j = 0; j < m_path_pool[i].size(); ++j) {
-            const auto& path = m_path_pool[i][j];
-            sum_warm += path.total_latency;
-
-            for (auto edge_id : path.edge_indices) {
-                sum_warm += edge_id;
-            }
-        }
-    }
 }

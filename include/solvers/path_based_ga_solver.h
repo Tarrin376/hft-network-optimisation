@@ -50,7 +50,6 @@ private:
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
     void mutate(HFT::Chromosome& offspring);
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
-    void warm_cache();
 
     void initialise_path_pool(int num_shortest_paths);
     void build_greedy_group(std::size_t start_idx, std::size_t end_idx);

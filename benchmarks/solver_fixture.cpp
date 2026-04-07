@@ -40,4 +40,6 @@ void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
         std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * 0.01);
         b->Args({nodes, edges, num_requests});
     }
+
+    b->Args({50000, 2499950, num_requests});
 }

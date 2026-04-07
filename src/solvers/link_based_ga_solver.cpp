@@ -16,9 +16,7 @@ LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph,
                                      double max_latency,
                                      bool record_selected_edges)
 : GASolver{ graph, requests, config, max_latency, (graph.get_num_edges() + 63) / 64, record_selected_edges }
-, m_crossover_dist(0, graph.get_num_edges() - 1) {
-    warm_cache();
-}
+, m_crossover_dist(0, graph.get_num_edges() - 1) {}
 
 void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
     if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.crossover_rate) {
@@ -103,25 +101,4 @@ HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     }
 
     return { fitness, selected_edges };
-}
-
-void LinkBasedGASolver::warm_cache() {
-    // 'volatile' prevents the compiler from optimising the loop away
-    volatile double dummy_sum = 0;
-
-    for (const auto& req : m_requests) {
-        dummy_sum += req.num_orders + req.server;
-    }
-
-    for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
-        const auto& edge = m_graph.get_edge(i);
-        dummy_sum += edge.latency + edge.rate_limit;
-    }
-
-    for (std::size_t i = 0; i < m_graph.get_num_nodes(); ++i) {
-        const auto& node = m_graph.get_node(i);
-        if (!node.outgoing_edges.empty()) {
-            dummy_sum += node.outgoing_edges[0];
-        }
-    }
 }
