@@ -50,34 +50,34 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         }
     }
 
-    // if (best_profit > std::numeric_limits<double>::lowest()) {
-    //     PathBasedGASolver recorder{ 
-    //         graph,
-    //         requests,
-    //         { .seed = best_seed },
-    //         generator->get_config().max_latency, 
-    //         num_shortest_paths, 
-    //         true
-    //     };
+    if (best_profit > std::numeric_limits<double>::lowest()) {
+        PathBasedGASolver recorder{ 
+            graph,
+            requests,
+            { .seed = best_seed },
+            generator->get_config().max_latency, 
+            num_shortest_paths, 
+            true
+        };
 
-    //     recorder.solve();
-    //     auto edges = recorder.get_selected_edges();
+        recorder.solve();
+        auto edges = recorder.get_selected_edges();
 
-    //     static int id{ 0 };
-    //     id++;
+        static int id{ 0 };
+        id++;
 
-    //     Logger::log_nodes(graph, "NODES_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_edges(graph, "EDGES_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_requests(requests, "REQUESTS_PB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
-    // }
+        Logger::log_nodes(graph, "NODES_PB_GA" + std::to_string(id) + ".csv");
+        Logger::log_edges(graph, "EDGES_PB_GA" + std::to_string(id) + ".csv");
+        Logger::log_requests(requests, "REQUESTS_PB_GA" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
+    }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : 0;
     state.counters["BestProfit"] = best_profit;
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
-BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
-   ->Apply(SolverFixture::ScalingArguments)
-   ->Unit(benchmark::kMillisecond)
-   ->Iterations(30);
+// BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
+//    ->Apply(SolverFixture::ScalingArguments)
+//    ->Unit(benchmark::kMillisecond)
+//    ->Iterations(30);

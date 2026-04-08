@@ -47,6 +47,6 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
 }
 
 // BENCHMARK_REGISTER_F(SolverFixture, MILPSolver)
-//    ->Apply(SolverFixture::ScalingArguments)
-//    ->Unit(benchmark::kMillisecond)
-//    ->Iterations(1);
+//     ->Apply(SolverFixture::ScalingArguments)
+//     ->Unit(benchmark::kMillisecond)
+//     ->Iterations(1);

@@ -6,6 +6,11 @@
 
 #include <benchmark/benchmark.h>
 
+struct GraphState {
+    std::int64_t num_nodes{};
+    double density{};
+};
+
 void SolverFixture::SetUp(const ::benchmark::State& state) {
     const std::size_t num_nodes = static_cast<std::size_t>(state.range(0));
     const std::size_t num_edges = static_cast<std::size_t>(state.range(1));
@@ -33,13 +38,33 @@ void SolverFixture::TearDown(const ::benchmark::State& _) {
 }
 
 void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
-    std::vector<std::int64_t> sparse{ 100, 500, 1000, 2500, 5000, 10000 };
+    std::vector<GraphState> states{
+        GraphState{ 100, 0.60 },
+        GraphState{ 250, 0.50 },
+        GraphState{ 500, 0.50 },
+        GraphState{ 1000, 0.40 },
+        GraphState{ 1500, 0.40 },
+        GraphState{ 2000, 0.40 },
+        GraphState{ 2500, 0.40 },
+        GraphState{ 100, 0.15 },
+        GraphState{ 200, 0.15 },
+        GraphState{ 500, 0.15 },
+        GraphState{ 1000, 0.10 },
+        GraphState{ 2500, 0.10 },
+        GraphState{ 5000, 0.05 },
+        GraphState{ 7000, 0.05 },
+        GraphState{ 100, 0.01 },
+        GraphState{ 500, 0.01 },
+        GraphState{ 1000, 0.01 },
+        GraphState{ 2500, 0.01 },
+        GraphState{ 5000, 0.01 },
+        GraphState{ 10000, 0.01 },
+        GraphState{ 50000, 0.001 },
+    };
+
     const int num_requests{ 1 };
-
-    for (auto nodes : sparse) {
-        std::int64_t edges = static_cast<std::int64_t>((nodes * (nodes - 1)) * 0.01);
-        b->Args({nodes, edges, num_requests});
+    for (auto state : states) {
+        std::int64_t edges = static_cast<std::int64_t>((state.num_nodes * (state.num_nodes - 1)) * state.density);
+        b->Args({state.num_nodes, edges, num_requests});
     }
-
-    b->Args({50000, 2499950, num_requests});
 }

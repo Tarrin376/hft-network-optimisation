@@ -1,5 +1,6 @@
 #include "strategies/stochastic_universal_sampling.h"
 
+#include <algorithm>
 #include <vector>
 #include <random>
 #include <cstdint>
@@ -25,4 +26,6 @@ void StochasticUniversalSampling::run(const std::vector<double>& fitness, std::v
         next_gen_parents[i] = idx;
         pointer += step;
     }
+
+    std::ranges::shuffle(next_gen_parents, gen);
 }
