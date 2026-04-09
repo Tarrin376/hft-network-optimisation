@@ -13,6 +13,8 @@ public:
 
     double evaluate(const std::vector<std::uint64_t>& selected_edges);
 
+    const std::vector<std::size_t>& get_used_edges() const;
+
 private:
     void reset();
 
@@ -27,6 +29,7 @@ private:
     std::vector<double> m_min_latency_buffer;
     std::vector<const HFT::Edge*> m_parent_edge_buffer;
     std::vector<int> m_path_flow;
+    std::vector<std::uint64_t> m_used_edges;
 
     const double m_max_latency{};
     const HFT::Graph& m_graph;

@@ -4,9 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <random>
-#include <limits>
 
-#include "utils/selection_evaluator.h"
 #include "types/expected_requests.h"
 #include "types/ga_config.h"
 #include "types/graph.h"
@@ -29,7 +27,7 @@ private:
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
     void mutate(HFT::Chromosome& offspring);
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
-    void warm_cache();
+    void reproduce();
 
     std::uniform_int_distribution<int> m_crossover_dist;
 };

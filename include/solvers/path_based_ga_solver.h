@@ -50,6 +50,7 @@ private:
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
     void mutate(HFT::Chromosome& offspring);
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
+    void reproduce();
 
     void initialise_path_pool(int num_shortest_paths);
     void build_greedy_group(std::size_t start_idx, std::size_t end_idx);
@@ -60,8 +61,8 @@ private:
                                  const HFT::Request& request,
                                  int remaining_orders);
 
-    PathPool m_path_pool;
     std::uniform_int_distribution<int> m_anchor_dist;
+    PathPool m_path_pool;
 
     const double GREEDY_GROUP_PERC{ 0.25 };
     const double EDGE_SHARING_GROUP_PERC{ 0.5 };

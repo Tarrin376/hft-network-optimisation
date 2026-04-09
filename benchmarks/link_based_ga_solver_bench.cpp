@@ -19,7 +19,7 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
 
     HFT::GAConfig solver_config {
         .population_size{ 300 },
-        .generations{ 700 },
+        .generations{ 1000 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
@@ -74,10 +74,10 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
-BENCHMARK_REGISTER_F(SolverFixture, LinkBasedGA)
-    ->Apply(SolverFixture::ScalingArguments)
-    ->Unit(benchmark::kMillisecond)
-    ->Iterations(30);
+// BENCHMARK_REGISTER_F(SolverFixture, LinkBasedGA)
+//     ->Apply(SolverFixture::ScalingArguments)
+//     ->Unit(benchmark::kMillisecond)
+//     ->Iterations(1);
 
 BENCHMARK_MAIN();
 

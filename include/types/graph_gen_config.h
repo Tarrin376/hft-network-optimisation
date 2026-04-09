@@ -8,6 +8,10 @@ namespace HFT {
         double max_latency{};
         int max_rate_limit{};
         int max_lease_cost{};
+        int max_num_orders{};
+        int min_order_profit{};
+        int max_order_profit{};
+        int max_planning_horizon{};
         std::size_t num_nodes{};
         std::size_t num_edges{};
         std::size_t num_servers{};

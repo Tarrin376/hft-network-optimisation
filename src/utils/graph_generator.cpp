@@ -8,22 +8,17 @@
 #include "types/graph.h"
 
 GraphGenerator::GraphGenerator(const HFT::GraphGenConfig& config) 
-: m_rate_limit_dist(0, config.max_rate_limit)
+: m_rate_limit_dist(1, config.max_rate_limit)
 , m_lease_cost_dist(1, config.max_lease_cost)
 , m_latency_dist(0, config.max_latency)
 , m_node_dist(0, config.num_nodes - 1)
+, m_num_orders_dist(1, config.max_num_orders)
+, m_planning_horizon_dist(1, config.max_planning_horizon)
+, m_order_profit_dist(config.min_order_profit, config.max_order_profit)
 , m_config{ config }
 , m_gen{ config.seed }
 , m_graph{ config.num_nodes, config.num_edges } {
-    assert(config.num_edges <= (config.num_nodes * (config.num_nodes - 1)) && "Too many edges supplied.");
-}
-
-void GraphGenerator::generate() {
-    reset();
-    generate_nodes();
-    assign_servers();
-    generate_edges();
-    generate_requests();
+    generate();
 }
 
 const HFT::Graph& GraphGenerator::get_graph() const {
@@ -38,10 +33,11 @@ const HFT::GraphGenConfig& GraphGenerator::get_config() const {
     return m_config;
 }
 
-void GraphGenerator::reset() {
-    m_graph.reset();
-    m_requests.clear();
-    m_used_edges.clear();
+void GraphGenerator::generate() {
+    generate_nodes();
+    assign_servers();
+    generate_edges();
+    generate_requests();
 }
 
 void GraphGenerator::generate_requests() {
@@ -59,9 +55,9 @@ void GraphGenerator::generate_requests() {
         HFT::Request new_request{ 
             .server = server, 
             .exchange = exchange, 
-            .num_orders = 5, 
-            .planning_horizon = 10, 
-            .max_order_profit = 4000
+            .num_orders = m_num_orders_dist(m_gen), 
+            .planning_horizon = m_planning_horizon_dist(m_gen), 
+            .max_order_profit = m_order_profit_dist(m_gen)
         };
 
         m_requests.push_back(new_request);
@@ -81,12 +77,27 @@ void GraphGenerator::generate_edges() {
         std::size_t from = static_cast<std::size_t>(m_node_dist(m_gen));
         std::size_t to = static_cast<std::size_t>(m_node_dist(m_gen));
 
-        if (from != to && m_used_edges.find({from, to}) == m_used_edges.end()) {
+        if (is_valid_edge(from, to)) {
             m_used_edges.insert({from, to});
             create_edge(from, to, edge_id);
             edge_id++;
         }
     }
+}
+
+bool GraphGenerator::is_valid_edge(std::size_t from, std::size_t to) {
+    if (from == to) {
+        return false;
+    }
+
+    const auto& source = m_graph.get_node(from);
+    const auto& dest = m_graph.get_node(to);
+
+    if ((source.is_server && dest.is_server) || (!source.is_server && dest.is_server)) {
+        return false;
+    }
+
+    return m_used_edges.find({from, to}) == m_used_edges.end();
 }
 
 void GraphGenerator::create_edge(std::size_t from, std::size_t to, std::size_t edge_id) {

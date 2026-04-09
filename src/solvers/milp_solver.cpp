@@ -31,6 +31,9 @@ double MILPSolver::solve() {
     }
 
     const or_tools::MPSolver::ResultStatus result_status = m_solver->Solve();
+    LOG(INFO) << "Solving with " << m_solver->SolverVersion();
+    LOG(INFO) << "Status: " << result_status;
+
     if (result_status == or_tools::MPSolver::INFEASIBLE) {
         return std::numeric_limits<double>::lowest();
     }
@@ -47,6 +50,15 @@ double MILPSolver::solve() {
                 m_selected_edges.push_back(i);
             }
         }
+    }
+
+    switch (result_status) {
+        case or_tools::MPSolver::OPTIMAL:
+            LOG(INFO) << "The problem does have an optimal solution!";
+            break;
+        case or_tools::MPSolver::FEASIBLE:
+            LOG(INFO) << "A potentially suboptimal solution was found.";
+            break;
     }
 
     return total_profit;

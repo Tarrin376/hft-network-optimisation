@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <limits>
+#include <iostream>
 
 #include "types/expected_requests.h"
 #include "types/state.h"
@@ -14,6 +15,7 @@ SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& gra
 : m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
 , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
 , m_path_flow(graph.get_num_edges(), 0)
+, m_used_edges((graph.get_num_edges() + 63) / 64, 0)
 , m_max_latency{ max_latency }
 , m_graph{ graph }
 , m_requests{ requests } {}
@@ -24,8 +26,6 @@ void SelectionEvaluator::reset() {
 }
 
 double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_edges) {
-    m_path_flow.assign(m_graph.get_num_edges(), 0);
-
     std::size_t num_edges{ m_graph.get_num_edges() };
     double total_profit{ 0 };
 
@@ -48,6 +48,10 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
                 const auto& edge = m_graph.get_edge(i);
                 double penalty = m_path_flow[i] * request.max_order_profit * (edge.latency / m_max_latency);
                 request_profit -= penalty;
+
+                if (m_path_flow[i] > 0) {
+                    m_used_edges[i / 64] |= (1ULL << (i % 64));
+                }
             }
         }
 
@@ -130,4 +134,8 @@ int SelectionEvaluator::process_orders(const HFT::Request& request, int remainin
 
 bool SelectionEvaluator::edge_is_selected(std::size_t edge_index, const std::vector<std::uint64_t>& selected_edges) const {
     return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
+}
+
+const std::vector<std::uint64_t>& SelectionEvaluator::get_used_edges() const {
+    return m_used_edges;
 }

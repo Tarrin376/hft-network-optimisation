@@ -77,7 +77,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
-// BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
-//    ->Apply(SolverFixture::ScalingArguments)
-//    ->Unit(benchmark::kMillisecond)
-//    ->Iterations(30);
+BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
+   ->Apply(SolverFixture::ScalingArguments)
+   ->Unit(benchmark::kMillisecond)
+   ->Iterations(1);

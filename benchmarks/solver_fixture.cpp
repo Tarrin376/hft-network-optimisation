@@ -20,21 +20,24 @@ void SolverFixture::SetUp(const ::benchmark::State& state) {
 
     HFT::GraphGenConfig config{
         .max_latency = 20.5,
-        .max_rate_limit = 4,
-        .max_lease_cost = 300,
+        .max_rate_limit = 70,
+        .max_lease_cost = 700,
+        .max_num_orders = 100,
+        .min_order_profit = 500,
+        .max_order_profit = 4000,
+        .max_planning_horizon = 10,
         .num_nodes = num_nodes,
         .num_edges = num_edges,
-        .num_servers = num_nodes / 20,
+        .num_servers = std::max(1UL, static_cast<std::size_t>(num_nodes * 0.05)),
         .num_requests = num_requests,
         .seed = setup_gen()
     };
 
     generator = std::make_unique<GraphGenerator>(config);
-    generator->generate();
 }
 
 void SolverFixture::TearDown(const ::benchmark::State& _) {
-    generator.reset();
+    // Do Nothing
 }
 
 void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
@@ -62,7 +65,7 @@ void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
         GraphState{ 50000, 0.001 },
     };
 
-    const int num_requests{ 1 };
+    const int num_requests{ 5 };
     for (auto state : states) {
         std::int64_t edges = static_cast<std::int64_t>((state.num_nodes * (state.num_nodes - 1)) * state.density);
         b->Args({state.num_nodes, edges, num_requests});

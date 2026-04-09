@@ -18,6 +18,7 @@ namespace HFT {
 
     struct FitnessPair {
         double fitness;
+        Chromosome repaired_chromosome;
         std::vector<std::size_t> selected_edges;
     };
 
@@ -54,10 +55,6 @@ protected:
         return static_cast<T*>(this)->build_initial_population();
     }
 
-    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome) {
-        return static_cast<T*>(this)->get_chromosome_fitness(chromosome);
-    }
-
     void mutate(HFT::Chromosome& offspring) {
         return static_cast<T*>(this)->mutate(offspring);
     }
@@ -66,12 +63,12 @@ protected:
         return static_cast<T*>(this)->crossover(parent1, parent2);
     }
 
-    void warm_cache() {
-        return static_cast<T*>(this)->warm_cache();
+    void reproduce() {
+        return static_cast<T*>(this)->reproduce();
     }
 
-    void compute_next_gen_parents() {
-        m_strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
+    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome) {
+        return static_cast<T*>(this)->get_chromosome_fitness(chromosome);
     }
 
     void compute_population_fitness() {
@@ -114,30 +111,14 @@ protected:
             }
         }
     }
+
+    void compute_next_gen_parents() {
+        m_strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
+    }
     
     std::mt19937& get_gen() {
         static thread_local std::mt19937 generator{ m_config.seed };
         return generator;
-    }
-
-    void reproduce() {
-        compute_population_fitness();
-        compute_next_gen_parents();
-
-        #pragma omp parallel for
-        for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-            m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
-            m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
-
-            auto& parent1 = m_next_pop_buffer[i];
-            auto& parent2 = m_next_pop_buffer[i + 1];
-            
-            crossover(parent1, parent2);
-            mutate(parent1);
-            mutate(parent2);
-        }
-
-        std::swap(m_cur_pop_buffer, m_next_pop_buffer);
     }
     
     std::vector<std::size_t> m_next_gen_parents;

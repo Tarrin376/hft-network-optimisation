@@ -27,11 +27,6 @@ void HFT::Graph::add_node(const Node& node) {
     m_nodes[node.id] = node;
 }
 
-void HFT::Graph::reset() {
-    m_edges.assign(get_num_edges(), {});
-    m_nodes.assign(get_num_nodes(), {});
-}
-
 const HFT::Edge& HFT::Graph::get_edge(std::size_t edge_id) const {
     assert(edge_id < m_num_edges);
     return m_edges[edge_id];
