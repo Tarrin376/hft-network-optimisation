@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <limits>
 #include <ranges>
-#include <iostream>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"

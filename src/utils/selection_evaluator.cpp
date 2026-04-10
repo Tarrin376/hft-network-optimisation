@@ -5,7 +5,6 @@
 #include <vector>
 #include <queue>
 #include <limits>
-#include <iostream>
 
 #include "types/expected_requests.h"
 #include "types/state.h"

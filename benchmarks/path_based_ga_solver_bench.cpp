@@ -1,6 +1,5 @@
 #include <cstdint>
 #include <limits>
-#include <iostream>
 
 #include <benchmark/benchmark.h>
 

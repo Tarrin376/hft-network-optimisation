@@ -6,7 +6,6 @@
 #include <limits>
 #include <algorithm>
 #include <utility>
-#include <iostream>
 
 #include "types/graph.h"
 #include "types/state.h"

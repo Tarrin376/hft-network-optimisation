@@ -5,7 +5,6 @@
 #include <sstream>
 #include <cstdint>
 #include <vector>
-#include <iostream>
 
 #include "types/expected_requests.h"
 #include "types/graph.h"

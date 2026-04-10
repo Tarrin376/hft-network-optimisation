@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <cstdint>
-#include <iostream>
 
 #include "utils/selection_evaluator.h"
 #include "utils/bit_utils.h"
