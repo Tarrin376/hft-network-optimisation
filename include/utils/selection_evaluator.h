@@ -16,8 +16,6 @@ public:
     const std::vector<std::size_t>& get_used_edges() const;
 
 private:
-    void reset();
-
     int update_path_flow(const HFT::Request& request, 
                          const std::vector<std::uint64_t>& selected_edges,
                          int remaining_orders);

@@ -31,7 +31,6 @@ private:
     std::uniform_int_distribution<int> m_lease_cost_dist;
     std::uniform_real_distribution<double> m_latency_dist;
     std::uniform_int_distribution<int> m_node_dist;
-    std::uniform_int_distribution<int> m_num_orders_dist;
     std::uniform_int_distribution<int> m_planning_horizon_dist;
     std::uniform_int_distribution<int> m_order_profit_dist;
 

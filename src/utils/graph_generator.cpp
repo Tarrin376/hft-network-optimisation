@@ -12,7 +12,6 @@ GraphGenerator::GraphGenerator(const HFT::GraphGenConfig& config)
 , m_lease_cost_dist(config.min_lease_cost, config.max_lease_cost)
 , m_latency_dist(0, config.max_latency)
 , m_node_dist(0, config.num_nodes - 1)
-, m_num_orders_dist(1, config.max_num_orders)
 , m_planning_horizon_dist(1, config.max_planning_horizon)
 , m_order_profit_dist(config.min_order_profit, config.max_order_profit)
 , m_config{ config }
@@ -55,7 +54,7 @@ void GraphGenerator::generate_requests() {
         HFT::Request new_request{ 
             .server = server, 
             .exchange = exchange, 
-            .num_orders = m_num_orders_dist(m_gen), 
+            .num_orders = m_config.num_orders, 
             .planning_horizon = m_planning_horizon_dist(m_gen), 
             .max_order_profit = m_order_profit_dist(m_gen)
         };

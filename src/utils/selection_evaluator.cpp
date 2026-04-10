@@ -20,21 +20,17 @@ SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& gra
 , m_graph{ graph }
 , m_requests{ requests } {}
 
-void SelectionEvaluator::reset() {
-    m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
-    m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
-}
-
 double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_edges) {
     std::size_t num_edges{ m_graph.get_num_edges() };
     double total_profit{ 0 };
+
+    m_path_flow.assign(m_graph.get_num_edges(), 0);
+    m_used_edges.assign(m_used_edges.size(), 0);
 
     for (const auto& request : m_requests) {
         int remaining_orders = request.num_orders;
         while (remaining_orders > 0) {
             int processed_orders = update_path_flow(request, selected_edges, remaining_orders);
-            reset();
-            
             if (processed_orders == 0) {
                 return std::numeric_limits<double>::lowest();
             }
@@ -43,7 +39,7 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
         }
 
         double request_profit = request.max_order_profit * request.num_orders;
-        for (int i = 0; i < num_edges; ++i) {
+        for (std::size_t i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = m_graph.get_edge(i);
                 double penalty = m_path_flow[i] * request.max_order_profit * (edge.latency / m_max_latency);
@@ -71,6 +67,9 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
 int SelectionEvaluator::update_path_flow(const HFT::Request& request, 
                                          const std::vector<std::uint64_t>& selected_edges, 
                                          int remaining_orders) {
+    m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
+    m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
+
     std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
     m_min_latency_buffer[request.server] = 0;
     pq.push({0, request.server});
