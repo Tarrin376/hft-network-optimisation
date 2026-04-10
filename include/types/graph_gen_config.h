@@ -6,7 +6,9 @@
 namespace HFT {
     struct GraphGenConfig {
         double max_latency{};
+        int min_rate_limit{};
         int max_rate_limit{};
+        int min_lease_cost{};
         int max_lease_cost{};
         int max_num_orders{};
         int min_order_profit{};

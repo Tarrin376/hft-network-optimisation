@@ -49,10 +49,13 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     }
 
     if (best_profit > std::numeric_limits<double>::lowest()) {
+        HFT::GAConfig recorder_config = solver_config;
+        recorder_config.seed = best_seed;
+
         LinkBasedGASolver recorder{ 
             graph,
             requests,
-            solver_config, 
+            recorder_config, 
             generator->get_config().max_latency,
             true 
         };

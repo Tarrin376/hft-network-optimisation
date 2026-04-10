@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <limits>
+#include <iostream>
 
 #include <benchmark/benchmark.h>
 
@@ -11,7 +12,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
     double profit_sum{ 0.0 };
 
-    const int num_shortest_paths{ 30 };
+    const int num_shortest_paths{ 64 };
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
@@ -51,16 +52,19 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     }
 
     if (best_profit > std::numeric_limits<double>::lowest()) {
+        HFT::GAConfig recorder_config = solver_config;
+        recorder_config.seed = best_seed;
+
         PathBasedGASolver recorder{ 
             graph,
             requests,
-            { .seed = best_seed },
+            recorder_config,
             generator->get_config().max_latency, 
             num_shortest_paths, 
             true
         };
 
-        recorder.solve();
+        double profit = recorder.solve();
         auto edges = recorder.get_selected_edges();
 
         static int id{ 0 };

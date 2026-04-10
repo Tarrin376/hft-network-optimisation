@@ -85,33 +85,6 @@ void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& par
     }
 }
 
-void LinkBasedGASolver::reproduce() {
-    compute_population_fitness();
-    compute_next_gen_parents();
-
-    #pragma omp parallel for
-    for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-        m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
-        m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
-
-        auto& parent1 = m_next_pop_buffer[i];
-        auto& parent2 = m_next_pop_buffer[i + 1];
-        
-        crossover(parent1, parent2);
-        mutate(parent1);
-        mutate(parent2);
-        
-        HFT::FitnessPair result1 = get_chromosome_fitness(parent1);
-        HFT::FitnessPair result2 = get_chromosome_fitness(parent2);
-
-        // Repair stage to remove unused edges
-        parent1 = std::move(result1.repaired_chromosome);
-        parent2 = std::move(result2.repaired_chromosome);
-    }
-
-    std::swap(m_cur_pop_buffer, m_next_pop_buffer);
-}
-
 HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
     SelectionEvaluator evaluator{ m_max_latency, m_graph, m_requests };
     const double fitness{ evaluator.evaluate(chromosome) };

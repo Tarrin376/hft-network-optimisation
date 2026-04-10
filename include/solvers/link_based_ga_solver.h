@@ -24,10 +24,9 @@ public:
 
 private:
     bool build_initial_population();
-    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
     void mutate(HFT::Chromosome& offspring);
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
-    void reproduce();
+    HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
 
     std::uniform_int_distribution<int> m_crossover_dist;
 };

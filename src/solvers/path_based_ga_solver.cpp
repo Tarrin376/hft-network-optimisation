@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <ranges>
+#include <iostream>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -75,31 +76,13 @@ void PathBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& par
     }
 }
 
-void PathBasedGASolver::reproduce() {
-    compute_population_fitness();
-    compute_next_gen_parents();
-
-    #pragma omp parallel for
-    for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-        m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
-        m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
-
-        auto& parent1 = m_next_pop_buffer[i];
-        auto& parent2 = m_next_pop_buffer[i + 1];
-        
-        crossover(parent1, parent2);
-        mutate(parent1);
-        mutate(parent2);
-    }
-
-    std::swap(m_cur_pop_buffer, m_next_pop_buffer);
-}
-
 HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome& chromosome) {
     std::size_t num_edges{ m_graph.get_num_edges() };
     m_t_scratch.ensure_capacity(num_edges);
 
     double total_profit{ 0.0 };
+    bool is_valid_solution{ true };
+
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         const auto& request = m_requests[i];
         int remaining_orders = request.num_orders;
@@ -117,26 +100,30 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
             mask <<= 1;
         }
 
-        if (remaining_orders > 0) {
-            return { .fitness = std::numeric_limits<double>::lowest() };
-        } else {
-            total_profit += request_profit;
-        }
-
         m_t_scratch.path_flow.assign(m_t_scratch.path_flow.size(), 0);
+        total_profit += request_profit;
+
+        if (remaining_orders > 0) {
+            is_valid_solution = false;
+            break;
+        }
     }
 
     for (auto edge_id : m_t_scratch.dirty_indices) {
         total_profit -= m_graph.get_edge(edge_id).lease_cost;
         m_t_scratch.used_edges[edge_id / 64] &= ~(1ULL << (edge_id % 64));
-        m_t_scratch.path_flow[edge_id] = 0;
+    }
+    
+    if (!is_valid_solution) {
+        m_t_scratch.dirty_indices.clear();
+        return { .fitness = std::numeric_limits<double>::lowest() };
     }
 
     HFT::FitnessPair pair{ .fitness = total_profit };
     if (m_record_selected_edges) {
         pair.selected_edges = std::move(m_t_scratch.dirty_indices);
     }
-
+    
     m_t_scratch.dirty_indices.clear();
     return pair;
 }
@@ -242,10 +229,12 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         const auto& edge = m_graph.get_edge(edge_id);
         double penalty = processed_orders * request.max_order_profit * (edge.latency / m_max_latency);
 
+        if (!(m_t_scratch.used_edges[edge_id / 64] & (1ULL << (edge_id % 64)))) {
+            m_t_scratch.dirty_indices.push_back(edge_id);
+        }
+        
         m_t_scratch.path_flow[edge_id] += processed_orders;
         m_t_scratch.used_edges[edge_id / 64] |= (1ULL << (edge_id % 64));
-        m_t_scratch.dirty_indices.push_back(edge_id);
-
         path_penalty += penalty;
     }
 

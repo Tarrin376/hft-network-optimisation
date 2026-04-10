@@ -7,6 +7,7 @@
 #include <random>
 #include <numeric>
 #include <concepts>
+#include <optional>
 
 #include "types/solver.h"
 #include "types/ga_config.h"
@@ -18,7 +19,7 @@ namespace HFT {
 
     struct FitnessPair {
         double fitness;
-        Chromosome repaired_chromosome;
+        std::optional<Chromosome> repaired_chromosome;
         std::vector<std::size_t> selected_edges;
     };
 
@@ -63,12 +64,31 @@ protected:
         return static_cast<T*>(this)->crossover(parent1, parent2);
     }
 
-    void reproduce() {
-        return static_cast<T*>(this)->reproduce();
-    }
-
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome) {
         return static_cast<T*>(this)->get_chromosome_fitness(chromosome);
+    }
+
+    void reproduce() {
+        compute_population_fitness();
+        compute_next_gen_parents();
+
+        #pragma omp parallel for
+        for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
+            m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
+            m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
+
+            auto& parent1 = m_next_pop_buffer[i];
+            auto& parent2 = m_next_pop_buffer[i + 1];
+            
+            crossover(parent1, parent2);
+            mutate(parent1);
+            mutate(parent2);
+
+            repair(parent1);
+            repair(parent2);
+        }
+
+        std::swap(m_cur_pop_buffer, m_next_pop_buffer);
     }
 
     void compute_population_fitness() {
@@ -109,6 +129,13 @@ protected:
             if (m_record_selected_edges) {
                 m_selected_edges = std::move(gen_best_edges);
             }
+        }
+    }
+
+    void repair(HFT::Chromosome& chromosome) {
+        HFT::FitnessPair result = get_chromosome_fitness(chromosome);
+        if (result.repaired_chromosome.has_value()) {
+            chromosome = std::move(result.repaired_chromosome.value());
         }
     }
 

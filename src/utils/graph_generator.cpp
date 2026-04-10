@@ -8,8 +8,8 @@
 #include "types/graph.h"
 
 GraphGenerator::GraphGenerator(const HFT::GraphGenConfig& config) 
-: m_rate_limit_dist(1, config.max_rate_limit)
-, m_lease_cost_dist(1, config.max_lease_cost)
+: m_rate_limit_dist(config.min_rate_limit, config.max_rate_limit)
+, m_lease_cost_dist(config.min_lease_cost, config.max_lease_cost)
 , m_latency_dist(0, config.max_latency)
 , m_node_dist(0, config.num_nodes - 1)
 , m_num_orders_dist(1, config.max_num_orders)
