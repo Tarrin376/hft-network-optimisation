@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "types/graph.h"
-#include "types/state.h"
 #include "utils/ksp_trie.h"
 
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
@@ -107,25 +106,26 @@ void KShortestPathFinder::clear_globally_disabled_edges() {
 }
 
 KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
-    std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
+    using State = std::pair<double, std::size_t>;
+    std::priority_queue<State, std::vector<State>, std::greater<State>> pq{};
     pq.push({0.0, source});
 
     m_min_latency_buffer[source] = { 0.0, ++m_latency_version };
     m_parent_edge_buffer[source] = nullptr;
 
     while (!pq.empty()) {
-        const HFT::State current = pq.top();
+        State current = pq.top();
         pq.pop();
 
-        if (current.node_id == dest) {
+        if (current.second == dest) {
             break;
         }
 
-        if (current.latency > m_min_latency_buffer[current.node_id].first) {
+        if (current.first > m_min_latency_buffer[current.second].first) {
             continue;
         }
 
-        const auto& node = m_graph.get_node(current.node_id);
+        const auto& node = m_graph.get_node(current.second);
         for (const auto& edge_id : node.outgoing_edges) {
             const auto& edge = m_graph.get_edge(edge_id);
 
@@ -133,12 +133,12 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
                 continue;
             }
 
-            double new_latency = current.latency + edge.latency;
+            double new_latency = current.first + edge.latency;
             const auto& next_pair = m_min_latency_buffer[edge.dest];
-
+            
             double existing_latency = (next_pair.second == m_latency_version) 
-                          ? next_pair.first 
-                          : std::numeric_limits<double>::max();
+                ? next_pair.first 
+                : std::numeric_limits<double>::max();
 
             if (new_latency < existing_latency) {
                 m_min_latency_buffer[edge.dest] = { new_latency, m_latency_version };

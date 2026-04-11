@@ -7,7 +7,6 @@
 #include <limits>
 
 #include "types/expected_requests.h"
-#include "types/state.h"
 #include "types/graph.h"
 
 SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& graph, const HFT::ExpectedRequests& requests) 
@@ -71,23 +70,25 @@ int SelectionEvaluator::update_path_flow(const HFT::Request& request,
     m_min_latency_buffer.assign(m_graph.get_num_nodes(), std::numeric_limits<double>::max());
     m_parent_edge_buffer.assign(m_graph.get_num_nodes(), nullptr);
 
-    std::priority_queue<HFT::State, std::vector<HFT::State>, std::greater<HFT::State>> pq{};
+    using State = std::pair<double, std::size_t>;
+    std::priority_queue<State, std::vector<State>, std::greater<State>> pq{};
+
     m_min_latency_buffer[request.server] = 0;
     pq.push({0, request.server});
 
     while (!pq.empty()) {
-        const HFT::State current = pq.top();
+        State current = pq.top();
         pq.pop();
 
-        if (current.node_id == request.exchange) {
+        if (current.second == request.exchange) {
             return process_orders(request, remaining_orders);
         }
 
-        if (current.latency > m_min_latency_buffer[current.node_id]) {
+        if (current.first > m_min_latency_buffer[current.second]) {
             continue;
         }
 
-        const auto& node = m_graph.get_node(current.node_id);
+        const auto& node = m_graph.get_node(current.second);
         for (const auto& edge_index : node.outgoing_edges) {
             if (!edge_is_selected(edge_index, selected_edges)) {
                 continue;
@@ -100,7 +101,7 @@ int SelectionEvaluator::update_path_flow(const HFT::Request& request,
                 continue;
             }
 
-            double new_latency = current.latency + edge.latency;
+            double new_latency = current.first + edge.latency;
             if (new_latency < m_min_latency_buffer[edge.dest]) {
                 m_min_latency_buffer[edge.dest] = new_latency;
                 m_parent_edge_buffer[edge.dest] = &edge;
