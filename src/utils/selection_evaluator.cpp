@@ -21,7 +21,7 @@ SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& gra
 
 double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_edges) {
     std::size_t num_edges{ m_graph.get_num_edges() };
-    double total_profit{ 0 };
+    double total_profit{ 0.0 };
 
     m_path_flow.assign(m_graph.get_num_edges(), 0);
     m_used_edges.assign(m_used_edges.size(), 0);
@@ -37,12 +37,11 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
             remaining_orders -= processed_orders;
         }
 
-        double request_profit = request.max_order_profit * request.num_orders;
         for (std::size_t i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = m_graph.get_edge(i);
                 double penalty = m_path_flow[i] * request.max_order_profit * (edge.latency / m_max_latency);
-                request_profit -= penalty;
+                total_profit -= penalty;
 
                 if (m_path_flow[i] > 0) {
                     m_used_edges[i / 64] |= (1ULL << (i % 64));
@@ -50,7 +49,6 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
             }
         }
 
-        total_profit += request_profit;
         m_path_flow.assign(m_graph.get_num_edges(), 0);
     }
 
@@ -58,6 +56,10 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
         if (edge_is_selected(i, selected_edges)) {
             total_profit -= m_graph.get_edge(i).lease_cost;
         }
+    }
+
+    for (const auto& request : m_requests) {
+        total_profit += request.max_order_profit * request.num_orders;
     }
 
     return total_profit;

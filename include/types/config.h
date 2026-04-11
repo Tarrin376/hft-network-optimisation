@@ -16,7 +16,7 @@ namespace HFT {
         std::string recorded_edges_file_name{};
         std::string algorithm{};
         
-        int num_shortest_paths{};
+        std::uint32_t num_shortest_paths{};
         double max_latency{};
 
         GAConfig ga{};

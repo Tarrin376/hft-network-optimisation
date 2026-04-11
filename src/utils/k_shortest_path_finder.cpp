@@ -12,18 +12,23 @@
 #include "utils/ksp_trie.h"
 
 KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
-    : m_disabled_edges((graph.get_num_edges() / 64) + 1)
+    : m_globally_disabled_edges((graph.get_num_edges() / 64) + 1)
+    , m_disabled_edges((graph.get_num_edges() / 64) + 1)
     , m_disabled_nodes((graph.get_num_nodes() / 64) + 1)
     , m_min_latency_buffer(graph.get_num_nodes(), { std::numeric_limits<double>::max(), 0 })
     , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
     , m_graph{ graph } {}
 
-std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, int k) {
-    Path path{ dijkstra(source, dest) };
-    m_ksp_trie.reset();
-
+std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, std::uint32_t num_shortest_paths) {
     m_shortest_paths.clear();
-    m_shortest_paths.reserve(k);
+    
+    if (num_shortest_paths == 0) {
+        return m_shortest_paths;
+    }
+
+    Path path{ dijkstra(source, dest) };
+    m_shortest_paths.reserve(num_shortest_paths);
+    m_ksp_trie.reset();
 
     if (path.edge_indices.empty()) {
         return m_shortest_paths;
@@ -33,11 +38,11 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
     m_ksp_trie.insert(path.edge_indices);
     pq.push(std::move(path));
 
-    for (int i = 0; i < k && !pq.empty(); ++i) {
+    for (int i = 0; i < num_shortest_paths && !pq.empty(); ++i) {
         m_shortest_paths.push_back(std::move(pq.top()));
         pq.pop();
 
-        if (i == k - 1) {
+        if (i == num_shortest_paths - 1) {
             break;
         }
 
@@ -81,6 +86,24 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
     }
 
     return m_shortest_paths;
+}
+
+void KShortestPathFinder::globally_disable_edge(std::size_t edge_id) {
+    std::size_t block = edge_id / 64;
+    std::uint64_t mask = 1ULL << (edge_id % 64);
+    
+    if (!(m_globally_disabled_edges[block] & mask)) {
+        m_globally_disabled_edges[block] |= mask;
+        m_dirty_global_edges.push_back(edge_id);
+    }
+}
+
+void KShortestPathFinder::clear_globally_disabled_edges() {
+    for (std::size_t edge_id : m_dirty_global_edges) {
+        m_globally_disabled_edges[edge_id / 64] &= ~(1ULL << (edge_id % 64));
+    }
+
+    m_dirty_global_edges.clear();
 }
 
 KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std::size_t dest) {
@@ -174,7 +197,9 @@ void KShortestPathFinder::disable_node(std::size_t node_id) {
 }
 
 bool KShortestPathFinder::edge_is_disabled(std::size_t edge_id) {
-    return m_disabled_edges[edge_id / 64] & (1ULL << (edge_id % 64));
+    std::size_t block = edge_id / 64;
+    std::uint64_t mask = 1ULL << (edge_id % 64);
+    return (m_disabled_edges[block] | m_globally_disabled_edges[block]) & mask;
 }
 
 bool KShortestPathFinder::node_is_disabled(std::size_t node_id) {

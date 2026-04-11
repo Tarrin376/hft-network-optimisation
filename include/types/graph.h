@@ -27,6 +27,7 @@ namespace HFT {
 
         void add_edge(const Edge& edge);
         void add_node(const Node& node);
+        void update_edge_latency(std::size_t edge_id, double new_latency);
 
         const Edge& get_edge(std::size_t edge_id) const;
         const Node& get_node(std::size_t node_id) const;

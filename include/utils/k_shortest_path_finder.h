@@ -24,11 +24,15 @@ public:
 
     KShortestPathFinder(const HFT::Graph& graph);
 
-    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, int k);
+    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, std::uint32_t num_shortest_paths);
+
+    void globally_disable_edge(std::size_t edge_id);
+    void clear_globally_disabled_edges();
 
 private:
     KSPTrie m_ksp_trie{};
-    
+
+    std::vector<std::uint64_t> m_globally_disabled_edges;
     std::vector<std::uint64_t> m_disabled_edges;
     std::vector<std::uint64_t> m_disabled_nodes;
 
@@ -42,6 +46,7 @@ private:
     std::vector<Path> m_shortest_paths{};
     std::vector<std::size_t> m_root_path_edges{};
 
+    std::vector<std::size_t> m_dirty_global_edges{};
     std::vector<std::size_t> m_dirty_edges{};
     std::vector<std::size_t> m_dirty_nodes{};
 

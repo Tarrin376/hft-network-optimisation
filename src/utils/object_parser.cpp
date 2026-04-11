@@ -133,7 +133,7 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
         } else if (arg == "--seed") {
             config.ga.seed = std::stoull(argv[++i]);
         } else if (arg == "--num-shortest-paths") {
-            config.num_shortest_paths = std::stoi(argv[++i]);
+            config.num_shortest_paths = std::stoul(argv[++i]);
         }
     }
 

@@ -19,7 +19,7 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
 
     HFT::GAConfig solver_config {
         .population_size{ 300 },
-        .generations{ 500 },
+        .generations{ 800 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };
@@ -48,39 +48,39 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
         }
     }
 
-    // if (best_profit > std::numeric_limits<double>::lowest()) {
-    //     HFT::GAConfig recorder_config = solver_config;
-    //     recorder_config.seed = best_seed;
+    if (best_profit > std::numeric_limits<double>::lowest()) {
+        HFT::GAConfig recorder_config = solver_config;
+        recorder_config.seed = best_seed;
 
-    //     LinkBasedGASolver recorder{ 
-    //         graph,
-    //         requests,
-    //         recorder_config, 
-    //         generator->get_config().max_latency,
-    //         true 
-    //     };
+        LinkBasedGASolver recorder{ 
+            graph,
+            requests,
+            recorder_config, 
+            generator->get_config().max_latency,
+            true 
+        };
 
-    //     recorder.solve();
-    //     auto edges = recorder.get_selected_edges();
+        recorder.solve();
+        auto edges = recorder.get_selected_edges();
 
-    //     static int id{ 0 };
-    //     id++;
+        static int id{ 0 };
+        id++;
 
-    //     Logger::log_nodes(graph, "NODES_LB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_edges(graph, "EDGES_LB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_requests(requests, "REQUESTS_LB_GA" + std::to_string(id) + ".csv");
-    //     Logger::log_optimal_network(edges, "ANS_LB_GA" + std::to_string(id) + ".csv");
-    // }
+        Logger::log_nodes(graph, "NODES_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_edges(graph, "EDGES_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_requests(requests, "REQUESTS_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_LB_GA" + std::to_string(id) + ".csv");
+    }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : best_profit;
     state.counters["BestProfit"] = best_profit;
     state.counters["Reliability"] = static_cast<double>(successes) / state.iterations();
 }
 
-BENCHMARK_REGISTER_F(SolverFixture, LinkBasedGA)
-    ->Apply(SolverFixture::ScalingArguments)
-    ->Unit(benchmark::kMillisecond)
-    ->Iterations(1);
+// BENCHMARK_REGISTER_F(SolverFixture, LinkBasedGA)
+//     ->Apply(SolverFixture::ScalingArguments)
+//     ->Unit(benchmark::kMillisecond)
+//     ->Iterations(1);
 
 BENCHMARK_MAIN();
 

@@ -13,6 +13,14 @@
 #include "utils/k_shortest_path_finder.h"
 #include "strategies/stochastic_universal_sampling.h"
 
+namespace HFT {
+    enum class PathPoolStrategy {
+        KSP_ONLY,
+        GLOBAL_PENALTY,
+        LOCAL_DIVERSIFIED
+    };
+}
+
 class PathBasedGASolver final : public GASolver<PathBasedGASolver, StochasticUniversalSampling> {
 public:
     friend class GASolver<PathBasedGASolver, StochasticUniversalSampling>;
@@ -21,8 +29,9 @@ public:
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
                       double max_latency,
-                      int num_shortest_paths,
-                      bool record_selected_edges);
+                      std::uint32_t num_shortest_paths,
+                      bool record_selected_edges,
+                      HFT::PathPoolStrategy path_pool_strategy = HFT::PathPoolStrategy::KSP_ONLY);
 
 private:
     using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
@@ -51,7 +60,11 @@ private:
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
 
-    void initialise_path_pool(int num_shortest_paths);
+    void initialise_path_pool(std::uint32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy);
+    void initialise_local_diversified_path_pool(std::uint32_t num_shortest_paths);
+    void initialise_ksp_only_path_pool(std::uint32_t num_shortest_paths);
+    void initialise_global_penalty_path_pool(std::uint32_t num_shortest_paths);
+
     void build_greedy_group(std::size_t start_idx, std::size_t end_idx);
     void build_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
     void build_random_group(std::size_t start_idx, std::size_t end_idx);

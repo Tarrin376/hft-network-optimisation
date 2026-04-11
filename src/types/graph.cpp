@@ -27,6 +27,11 @@ void HFT::Graph::add_node(const Node& node) {
     m_nodes[node.id] = node;
 }
 
+void HFT::Graph::update_edge_latency(std::size_t edge_id, double new_latency) {
+    assert(edge_id < m_num_edges);
+    m_edges[edge_id].latency = new_latency;
+}
+
 const HFT::Edge& HFT::Graph::get_edge(std::size_t edge_id) const {
     assert(edge_id < m_num_edges);
     return m_edges[edge_id];

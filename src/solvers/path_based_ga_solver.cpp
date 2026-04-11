@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <ranges>
+#include <queue>
 
 #include "types/solver.h"
 #include "types/expected_requests.h"
@@ -18,12 +19,13 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
                                      double max_latency,
-                                     int num_shortest_paths,
-                                     bool record_selected_edges)
+                                     std::uint32_t num_shortest_paths,
+                                     bool record_selected_edges,
+                                     HFT::PathPoolStrategy path_pool_strategy)
 : GASolver{ graph, requests, config, max_latency, requests.size(), record_selected_edges }
 , m_anchor_dist(0, requests.size() - 1)
 , m_path_pool(requests.size()) {
-    initialise_path_pool(std::min(num_shortest_paths, 64));
+    initialise_path_pool(std::min(num_shortest_paths, 64u), path_pool_strategy);
 }
 
 bool PathBasedGASolver::build_initial_population() {
@@ -127,7 +129,55 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     return pair;
 }
 
-void PathBasedGASolver::initialise_path_pool(int num_shortest_paths) {
+void PathBasedGASolver::initialise_path_pool(std::uint32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy) {
+    switch (path_pool_strategy) {
+    case HFT::PathPoolStrategy::KSP_ONLY:
+        initialise_ksp_only_path_pool(num_shortest_paths);
+        break;
+    case HFT::PathPoolStrategy::LOCAL_DIVERSIFIED:
+        initialise_local_diversified_path_pool(num_shortest_paths);
+        break;
+    case HFT::PathPoolStrategy::GLOBAL_PENALTY:
+        initialise_global_penalty_path_pool(num_shortest_paths);
+        break;
+    }
+}
+
+void PathBasedGASolver::initialise_local_diversified_path_pool(std::uint32_t num_shortest_paths) {
+    #pragma omp parallel
+    {
+        HFT::Graph thread_local_graph{ m_graph };
+        KShortestPathFinder ksp_finder{ thread_local_graph };
+
+        #pragma omp for schedule(dynamic)
+        for (std::size_t i = 0; i < m_requests.size(); ++i) {
+            const auto& req = m_requests[i];
+            ksp_finder.clear_globally_disabled_edges(); 
+            m_path_pool[i] = std::move(ksp_finder.find_paths(req.server, req.exchange, num_shortest_paths));
+            
+            bool is_first_path{ true };
+            while (m_path_pool[i].size() < 64) {
+                auto best_path = std::move(ksp_finder.find_paths(req.server, req.exchange, 1));
+                if (best_path.empty()) {
+                    break;
+                }
+
+                for (auto edge_id : best_path[0].edge_indices) {
+                    ksp_finder.globally_disable_edge(edge_id);
+                }
+                
+                if (is_first_path) {
+                    is_first_path = false;
+                    continue;
+                }
+
+                m_path_pool[i].push_back(std::move(best_path[0]));
+            }
+        }
+    }
+}
+
+void PathBasedGASolver::initialise_ksp_only_path_pool(std::uint32_t num_shortest_paths) {
     #pragma omp parallel 
     {
         KShortestPathFinder ksp_finder{ m_graph };
@@ -136,6 +186,64 @@ void PathBasedGASolver::initialise_path_pool(int num_shortest_paths) {
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& request = m_requests[i];
             m_path_pool[i] = std::move(ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths));
+        }
+    }
+}
+
+void PathBasedGASolver::initialise_global_penalty_path_pool(std::uint32_t num_shortest_paths) {
+    initialise_ksp_only_path_pool(num_shortest_paths);
+
+    std::vector<std::uint32_t> edge_popularities(m_graph.get_num_edges(), 0);
+    HFT::Graph modified_graph{ m_graph };
+    
+    for (const auto& paths : m_path_pool) {
+        for (const auto& path : paths) {
+            for (auto edge_id : path.edge_indices) {
+                edge_popularities[edge_id]++;
+            }
+        }
+    }
+
+    auto cmp = [&edge_popularities](std::size_t a, std::size_t b) -> bool {
+        return edge_popularities[b] > edge_popularities[a];
+    };
+
+    std::priority_queue<std::size_t, std::vector<std::size_t>, decltype(cmp)> pq(cmp);
+    std::size_t most_popular{ static_cast<std::size_t>(0.05 * modified_graph.get_num_edges()) };
+
+    for (std::size_t i = 0; i < edge_popularities.size(); ++i) {
+        if (pq.size() < most_popular) {
+            pq.push(i);
+            continue;
+        }
+    
+        if (edge_popularities[i] > edge_popularities[pq.top()]) {
+            pq.pop();
+            pq.push(i);
+        }
+    }
+
+    while (pq.size() > 0) {
+        std::size_t edge_id = pq.top();
+        const auto& edge = modified_graph.get_edge(edge_id);
+
+        const double new_latency = edge.latency * (1 + edge_popularities[edge_id]);
+        modified_graph.update_edge_latency(edge_id, new_latency);
+        pq.pop();
+    }
+
+    #pragma omp parallel 
+    {
+        KShortestPathFinder ksp_finder{ modified_graph };
+
+        #pragma omp for
+        for (std::size_t i = 0; i < m_requests.size(); ++i) {
+            const auto& request = m_requests[i];
+            auto new_paths = std::move(ksp_finder.find_paths(request.server, request.exchange, 64 - num_shortest_paths));
+            
+            for (auto& p : new_paths) {
+                m_path_pool[i].push_back(std::move(p));
+            }
         }
     }
 }
