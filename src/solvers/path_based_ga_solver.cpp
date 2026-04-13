@@ -241,8 +241,8 @@ void PathBasedGASolver::initialise_global_penalty_path_pool(std::uint32_t num_sh
             const auto& request = m_requests[i];
             auto new_paths = std::move(ksp_finder.find_paths(request.server, request.exchange, 64 - num_shortest_paths));
             
-            for (auto& p : new_paths) {
-                m_path_pool[i].push_back(std::move(p));
+            for (auto& path : new_paths) {
+                m_path_pool[i].push_back(std::move(path));
             }
         }
     }
