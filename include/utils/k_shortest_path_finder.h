@@ -2,6 +2,7 @@
 #define K_SHORTEST_PATH_FINDER
 
 #include <cstdint>
+#include <cmath>
 #include <vector>
 
 #include "types/graph.h"
@@ -12,19 +13,23 @@ public:
     struct Path {
         std::vector<std::size_t> edge_indices{};
         double total_latency{};
+        double total_lease_cost{};
         
         bool operator>(const Path& other) const {
+            constexpr double epsilon = 1e-9;
+            
+            // Heuristic: If total latency is equivalent, use path with lower total lease cost
+            if (std::abs(total_latency - other.total_latency) < epsilon) {
+                return total_lease_cost > other.total_lease_cost;
+            }
+            
             return total_latency > other.total_latency;
-        }
-
-        bool operator<(const Path& other) const {
-            return total_latency < other.total_latency;
         }
     };
 
     KShortestPathFinder(const HFT::Graph& graph);
 
-    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, std::uint32_t num_shortest_paths);
+    std::vector<Path>& find_paths(std::size_t source, std::size_t dest, std::int32_t num_shortest_paths);
 
     void globally_disable_edge(std::size_t edge_id);
     void clear_globally_disabled_edges();

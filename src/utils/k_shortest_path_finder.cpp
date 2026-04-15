@@ -18,7 +18,7 @@ KShortestPathFinder::KShortestPathFinder(const HFT::Graph& graph)
     , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
     , m_graph{ graph } {}
 
-std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, std::uint32_t num_shortest_paths) {
+std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::size_t source, std::size_t dest, std::int32_t num_shortest_paths) {
     m_shortest_paths.clear();
     
     if (num_shortest_paths == 0) {
@@ -158,6 +158,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
     while (cur_edge) {
         path.edge_indices.push_back(cur_edge->id);
         path.total_latency += cur_edge->latency;
+        path.total_lease_cost += cur_edge->lease_cost;
         cur_edge = m_parent_edge_buffer[cur_edge->source];
     }
 

@@ -29,7 +29,7 @@ public:
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
                       double max_latency,
-                      std::uint32_t num_shortest_paths,
+                      std::int32_t num_shortest_paths,
                       bool record_selected_edges,
                       HFT::PathPoolStrategy path_pool_strategy = HFT::PathPoolStrategy::KSP_ONLY);
 
@@ -60,10 +60,10 @@ private:
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
 
-    void initialise_path_pool(std::uint32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy);
-    void initialise_local_diversified_path_pool(std::uint32_t num_shortest_paths);
-    void initialise_ksp_only_path_pool(std::uint32_t num_shortest_paths);
-    void initialise_global_penalty_path_pool(std::uint32_t num_shortest_paths);
+    void initialise_path_pool(std::int32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy);
+    void initialise_local_diversified_path_pool(std::int32_t num_shortest_paths);
+    void initialise_ksp_only_path_pool(std::int32_t num_shortest_paths);
+    void initialise_global_penalty_path_pool(std::int32_t num_shortest_paths);
 
     void build_greedy_group(std::size_t start_idx, std::size_t end_idx);
     void build_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);

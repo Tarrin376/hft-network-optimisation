@@ -19,13 +19,13 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
                                      const HFT::ExpectedRequests& requests, 
                                      const HFT::GAConfig& config,
                                      double max_latency,
-                                     std::uint32_t num_shortest_paths,
+                                     std::int32_t num_shortest_paths,
                                      bool record_selected_edges,
                                      HFT::PathPoolStrategy path_pool_strategy)
 : GASolver{ graph, requests, config, max_latency, requests.size(), record_selected_edges }
 , m_anchor_dist(0, requests.size() - 1)
 , m_path_pool(requests.size()) {
-    initialise_path_pool(std::min(num_shortest_paths, 64u), path_pool_strategy);
+    initialise_path_pool(std::min(num_shortest_paths, 64), path_pool_strategy);
 }
 
 bool PathBasedGASolver::build_initial_population() {
@@ -129,7 +129,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     return pair;
 }
 
-void PathBasedGASolver::initialise_path_pool(std::uint32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy) {
+void PathBasedGASolver::initialise_path_pool(std::int32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy) {
     switch (path_pool_strategy) {
     case HFT::PathPoolStrategy::KSP_ONLY:
         initialise_ksp_only_path_pool(num_shortest_paths);
@@ -143,7 +143,7 @@ void PathBasedGASolver::initialise_path_pool(std::uint32_t num_shortest_paths, H
     }
 }
 
-void PathBasedGASolver::initialise_local_diversified_path_pool(std::uint32_t num_shortest_paths) {
+void PathBasedGASolver::initialise_local_diversified_path_pool(std::int32_t num_shortest_paths) {
     #pragma omp parallel
     {
         HFT::Graph thread_local_graph{ m_graph };
@@ -177,7 +177,7 @@ void PathBasedGASolver::initialise_local_diversified_path_pool(std::uint32_t num
     }
 }
 
-void PathBasedGASolver::initialise_ksp_only_path_pool(std::uint32_t num_shortest_paths) {
+void PathBasedGASolver::initialise_ksp_only_path_pool(std::int32_t num_shortest_paths) {
     #pragma omp parallel 
     {
         KShortestPathFinder ksp_finder{ m_graph };
@@ -190,7 +190,7 @@ void PathBasedGASolver::initialise_ksp_only_path_pool(std::uint32_t num_shortest
     }
 }
 
-void PathBasedGASolver::initialise_global_penalty_path_pool(std::uint32_t num_shortest_paths) {
+void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_shortest_paths) {
     initialise_ksp_only_path_pool(num_shortest_paths);
 
     std::vector<std::uint32_t> edge_popularities(m_graph.get_num_edges(), 0);
