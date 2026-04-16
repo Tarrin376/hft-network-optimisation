@@ -15,8 +15,8 @@ public:
     static void ScalingArguments(benchmark::internal::Benchmark* b);
 
 protected:
-    std::unique_ptr<GraphGenerator> generator;
-    std::mt19937 solver_seed_gen{ 123 };
+    std::unique_ptr<GraphGenerator> m_generator;
+    std::mt19937 m_solver_seed_gen{ 123 };
 };
 
 #endif

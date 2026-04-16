@@ -14,8 +14,8 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
-    const HFT::Graph& graph{ generator->get_graph() };
-    const HFT::ExpectedRequests& requests{ generator->get_requests() };
+    const HFT::Graph& graph{ m_generator->get_graph() };
+    const HFT::ExpectedRequests& requests{ m_generator->get_requests() };
 
     HFT::GAConfig solver_config {
         .population_size{ 300 },
@@ -25,14 +25,14 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     };
 
     for (auto _ : state) {
-        unsigned long long current_seed = solver_seed_gen();
+        unsigned long long current_seed = m_solver_seed_gen();
         solver_config.seed = current_seed;
         
         LinkBasedGASolver solver{ 
             graph,
             requests,
             solver_config, 
-            generator->get_config().max_latency,
+            m_generator->get_config().max_latency,
             false 
         };
 
@@ -56,7 +56,7 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
             graph,
             requests,
             recorder_config, 
-            generator->get_config().max_latency,
+            m_generator->get_config().max_latency,
             true 
         };
 

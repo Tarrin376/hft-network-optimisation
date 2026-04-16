@@ -7,15 +7,15 @@
 BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
 
-    const HFT::Graph& graph{ generator->get_graph() };
-    const HFT::ExpectedRequests& requests{ generator->get_requests() };
+    const HFT::Graph& graph{ m_generator->get_graph() };
+    const HFT::ExpectedRequests& requests{ m_generator->get_requests() };
 
     for (auto _ : state) {
         MILPSolver solver{ 
             graph,
             requests,
             { "SCIP" }, 
-            generator->get_config().max_latency,
+            m_generator->get_config().max_latency,
             false 
         };
 
@@ -27,7 +27,7 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
             graph,
             requests,
             { "SCIP" }, 
-            generator->get_config().max_latency,
+            m_generator->get_config().max_latency,
             true 
         };
 
