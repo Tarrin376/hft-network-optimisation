@@ -25,6 +25,8 @@ class PathBasedGASolver final : public GASolver<PathBasedGASolver, StochasticUni
 public:
     friend class GASolver<PathBasedGASolver, StochasticUniversalSampling>;
 
+    using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
+
     PathBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
@@ -33,9 +35,9 @@ public:
                       bool record_selected_edges,
                       HFT::PathPoolStrategy path_pool_strategy = HFT::PathPoolStrategy::KSP_ONLY);
 
+    const PathPool& get_path_pool();
+
 private:
-    using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
-    
     struct PathPenalty {
         double penalty{};
         int processed_orders{};

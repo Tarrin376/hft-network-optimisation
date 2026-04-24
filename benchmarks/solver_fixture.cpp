@@ -45,32 +45,30 @@ void SolverFixture::ScalingArguments(benchmark::internal::Benchmark* b) {
     std::vector<GraphState> states{
         // GraphState{ 70, 0.30 },
         // GraphState{ 250, 0.20 },
-        GraphState{ 450, 0.20 },
+        // GraphState{ 450, 0.20 },
         // GraphState{ 750, 0.20 },
         // GraphState{ 850, 0.20 },
-        // GraphState{ 950, 0.20 },
+        GraphState{ 950, 0.20 },
         // GraphState{ 250, 0.10 },
         // GraphState{ 400, 0.10 },
         // GraphState{ 750, 0.05 },
         // GraphState{ 1000, 0.05 },
         // GraphState{ 1500, 0.05 },
-        // GraphState{ 2000, 0.05 },
+        GraphState{ 2000, 0.05 },
         // GraphState{ 500, 0.01 },
         // GraphState{ 1000, 0.01 },
         // GraphState{ 2500, 0.005 },
         // GraphState{ 5000, 0.003 },
         // GraphState{ 7000, 0.002 },
-        // GraphState{ 9000, 0.002 },
+        GraphState{ 9000, 0.002 },
     };
 
     std::mt19937 setup_gen{}; 
     for (auto state : states) {
         std::int64_t edges = static_cast<std::int64_t>((state.num_nodes * (state.num_nodes - 1)) * state.density);
         setup_gen.seed(34);
-        auto topology_seed = setup_gen(); 
 
-        for (int r = 5; r <= 200; r += 5) {
-            b->Args({state.num_nodes, edges, r, static_cast<std::int64_t>(topology_seed)});
-        }
+        auto topology_seed = setup_gen(); 
+        b->Args({state.num_nodes, edges, 10, static_cast<std::int64_t>(topology_seed)});
     }
 }

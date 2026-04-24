@@ -2,16 +2,18 @@
 #include <limits>
 
 #include <benchmark/benchmark.h>
+#include <iostream>
 
 #include "bench_utils/solver_fixture.h"
 #include "solvers/path_based_ga_solver.h"
+#include "utils/statistics_utils.h"
 #include "utils/logger.h"
 
 BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
     double profit_sum{ 0.0 };
 
-    const std::uint32_t num_shortest_paths{ 40u };
+    const std::uint32_t num_shortest_paths{ 16u };
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
@@ -75,6 +77,9 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         Logger::log_edges(graph, "EDGES_PB_GA" + std::to_string(id) + ".csv");
         Logger::log_requests(requests, "REQUESTS_PB_GA" + std::to_string(id) + ".csv");
         Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
+
+        const auto& path_pool = recorder.get_path_pool();
+        std::cout << StatisticsUtils::intra_pool_mean_jaccard_similarity(path_pool) << '\n';
     }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : best_profit;
@@ -85,4 +90,4 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
 BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
    ->Apply(SolverFixture::ScalingArguments)
    ->Unit(benchmark::kMillisecond)
-   ->Iterations(1);
+   ->Iterations(30);

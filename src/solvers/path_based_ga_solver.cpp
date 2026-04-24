@@ -347,3 +347,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
 
     return { path_penalty, processed_orders };
 }
+
+const PathBasedGASolver::PathPool& PathBasedGASolver::get_path_pool() {
+    return m_path_pool;
+}
