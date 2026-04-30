@@ -22,10 +22,10 @@ LinkBasedGASolver::LinkBasedGASolver(const HFT::Graph& graph,
 bool LinkBasedGASolver::build_initial_population() {
     const std::size_t num_edges{ m_graph.get_num_edges() };
     
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (std::size_t i = 0; i < m_config.population_size; ++i) {
         for (std::size_t j = 0; j < num_edges; ++j) {
-            if (i == 0 || RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.initial_bit_flip_rate) {
+            if (i == 0 || RandomUtils::get_random_double(0.0, 1.0, m_gen) < m_config.initial_bit_flip_rate) {
                 m_cur_pop_buffer[i][j / 64] |= (1ULL << (j % 64));
             }
         }
@@ -33,7 +33,7 @@ bool LinkBasedGASolver::build_initial_population() {
 
     HFT::Chromosome random((num_edges + 63) / 64);
     for (std::size_t i = 0; i < num_edges; ++i) {
-        if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
+        if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < 0.5) {
             random[i / 64] |= (1ULL << (i % 64));
         }
     }
@@ -46,24 +46,24 @@ void LinkBasedGASolver::mutate(HFT::Chromosome& offspring) {
     std::geometric_distribution<int> skip_dist(m_config.mutation_rate);
 
     const std::size_t total_bits = offspring.size() * 64;
-    std::size_t current_bit = static_cast<std::size_t>(skip_dist(get_gen()));
+    std::size_t current_bit = static_cast<std::size_t>(skip_dist(m_gen));
 
     while (current_bit < total_bits) {
         std::size_t block_idx = current_bit / 64;
         std::size_t bit_idx = current_bit % 64;
 
         offspring[block_idx] ^= (1ULL << bit_idx);
-        current_bit += (1 + static_cast<std::size_t>(skip_dist(get_gen()))); 
+        current_bit += (1 + static_cast<std::size_t>(skip_dist(m_gen))); 
     }
 }
 
 void LinkBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
-    if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.crossover_rate) {
+    if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < m_config.crossover_rate) {
         return;
     }
     
-    int first_rand_idx{ m_crossover_dist(get_gen()) };
-    int second_rand_idx{ m_crossover_dist(get_gen()) };
+    int first_rand_idx{ m_crossover_dist(m_gen) };
+    int second_rand_idx{ m_crossover_dist(m_gen) };
 
     int start_idx{ std::min(first_rand_idx, second_rand_idx) };
     int end_idx{ std::max(first_rand_idx, second_rand_idx) };
@@ -89,10 +89,7 @@ HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     const double fitness{ evaluator.evaluate(chromosome) };
 
     if (!m_record_selected_edges) {
-        return { 
-            .fitness = fitness, 
-            .repaired_chromosome = std::move(evaluator.get_used_edges()) 
-        };
+        return { fitness };
     }
 
     std::vector<std::size_t> selected_edges{};
@@ -102,9 +99,5 @@ HFT::FitnessPair LinkBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
         }
     }
 
-    return { 
-        .fitness = fitness,
-        .repaired_chromosome = std::move(evaluator.get_used_edges()),
-        .selected_edges = selected_edges
-    };
+    return { fitness, selected_edges };
 }

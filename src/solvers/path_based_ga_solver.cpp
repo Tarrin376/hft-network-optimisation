@@ -51,7 +51,7 @@ void PathBasedGASolver::mutate(HFT::Chromosome& offspring) {
     for (std::size_t i = 0; i < offspring.size(); ++i) {
         std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
-            if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.mutation_rate) {
+            if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < m_config.mutation_rate) {
                 offspring[i] ^= mask;
             }
 
@@ -64,7 +64,7 @@ void PathBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& par
     for (std::size_t i = 0; i < parent1.size(); ++i) {
         std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
-            if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < m_config.crossover_rate) {
+            if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < m_config.crossover_rate) {
                 std::uint64_t p1_mask = parent1[i] & mask;
                 std::uint64_t p2_mask = parent2[i] & mask;
 
@@ -117,7 +117,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
     
     if (!is_valid_solution) {
         m_t_scratch.dirty_indices.clear();
-        return { .fitness = std::numeric_limits<double>::lowest() };
+        return { std::numeric_limits<double>::lowest() };
     }
 
     HFT::FitnessPair pair{ .fitness = total_profit };
@@ -182,7 +182,7 @@ void PathBasedGASolver::initialise_ksp_only_path_pool(std::int32_t num_shortest_
     {
         KShortestPathFinder ksp_finder{ m_graph };
 
-        #pragma omp for
+        #pragma omp for schedule(dynamic)
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& request = m_requests[i];
             m_path_pool[i] = std::move(ksp_finder.find_paths(request.server, request.exchange, num_shortest_paths));
@@ -236,7 +236,7 @@ void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_sho
     {
         KShortestPathFinder ksp_finder{ modified_graph };
 
-        #pragma omp for
+        #pragma omp for schedule(dynamic)
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& request = m_requests[i];
             auto new_paths = std::move(ksp_finder.find_paths(request.server, request.exchange, 64 - num_shortest_paths));
@@ -249,14 +249,14 @@ void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_sho
 }
 
 void PathBasedGASolver::build_greedy_group(std::size_t start_idx, std::size_t end_idx) {
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
-            if (m_path_pool[j].size() > 0 && RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
+            if (m_path_pool[j].size() > 0 && RandomUtils::get_random_double(0.0, 1.0, m_gen) < 0.5) {
                 m_cur_pop_buffer[i][j] |= (1ULL << 0); 
             }
 
-            if (m_path_pool[j].size() > 1 && RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
+            if (m_path_pool[j].size() > 1 && RandomUtils::get_random_double(0.0, 1.0, m_gen) < 0.5) {
                 m_cur_pop_buffer[i][j] |= (1ULL << 1);
             }
         }
@@ -269,9 +269,9 @@ void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::siz
         std::vector<std::uint32_t> edge_versions(m_graph.get_num_edges(), 0);
         std::uint32_t current_version = 0;
 
-        #pragma omp for
+        #pragma omp for schedule(static)
         for (std::size_t i = start_idx; i < end_idx; ++i) {
-            std::size_t anchor_req = static_cast<std::size_t>(m_anchor_dist(get_gen()));
+            std::size_t anchor_req = static_cast<std::size_t>(m_anchor_dist(m_gen));
             const auto& backbone = m_path_pool[anchor_req][0]; 
 
             current_version++; 
@@ -304,12 +304,12 @@ void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::siz
 }
 
 void PathBasedGASolver::build_random_group(std::size_t start_idx, std::size_t end_idx) {
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (std::size_t i = start_idx; i < end_idx; ++i) {
         for (std::size_t j = 0; j < m_requests.size(); ++j) {
             std::uint64_t mask = 1ULL;
             for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
-                if (RandomUtils::get_random_double(0.0, 1.0, get_gen()) < 0.5) {
+                if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < 0.5) {
                     m_cur_pop_buffer[i][j] |= mask;
                 }
 

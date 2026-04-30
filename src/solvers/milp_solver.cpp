@@ -1,11 +1,8 @@
 #include "solvers/milp_solver.h"
 
-#include <cstdlib>
 #include <memory>
 #include <cstdint>
-#include <vector>
 #include <string>
-#include <iostream>
 
 #include "ortools/base/init_google.h"
 #include "ortools/init/init.h"

@@ -18,8 +18,8 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
     const HFT::ExpectedRequests& requests{ m_generator->get_requests() };
 
     HFT::GAConfig solver_config {
-        .population_size{ 300 },
-        .generations{ 800 },
+        .population_size{ 200 },
+        .generations{ 700 },
         .mutation_rate{ 0.08 },
         .crossover_rate{ 0.8 },
     };

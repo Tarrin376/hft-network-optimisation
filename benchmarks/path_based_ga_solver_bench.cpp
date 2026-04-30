@@ -2,7 +2,6 @@
 #include <limits>
 
 #include <benchmark/benchmark.h>
-#include <iostream>
 
 #include "bench_utils/solver_fixture.h"
 #include "solvers/path_based_ga_solver.h"
@@ -13,7 +12,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
     double profit_sum{ 0.0 };
 
-    const std::uint32_t num_shortest_paths{ 16u };
+    const std::uint32_t num_shortest_paths{ 40u };
     unsigned long long best_seed{ 0ULL };
     int successes{ 0 };
 
@@ -27,6 +26,8 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         .crossover_rate{ 0.8 },
     };
 
+    m_solver_seed_gen.seed(SolverFixture::solver_seed);
+
     for (auto _ : state) {
         unsigned long long current_seed = m_solver_seed_gen();
         solver_config.seed = current_seed;
@@ -38,7 +39,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
             m_generator->get_config().max_latency,
             num_shortest_paths,
             false,
-            HFT::PathPoolStrategy::LOCAL_DIVERSIFIED
+            HFT::PathPoolStrategy::KSP_ONLY
         };
 
         double profit = solver.solve();
@@ -79,7 +80,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
 
         const auto& path_pool = recorder.get_path_pool();
-        std::cout << StatisticsUtils::intra_pool_mean_jaccard_similarity(path_pool) << '\n';
+        state.counters["Intra-Pool Similarity"] = (successes > 0) ? (profit_sum / successes) : best_profit;
     }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : best_profit;

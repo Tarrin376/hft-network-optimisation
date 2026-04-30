@@ -14,9 +14,11 @@ public:
     void TearDown(const ::benchmark::State& _) override;
     static void ScalingArguments(benchmark::internal::Benchmark* b);
 
+    static const unsigned long long solver_seed{ 123ULL };
+
 protected:
     std::unique_ptr<GraphGenerator> m_generator;
-    std::mt19937 m_solver_seed_gen{ 123 };
+    std::mt19937 m_solver_seed_gen{};
 };
 
 #endif

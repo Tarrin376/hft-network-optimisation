@@ -8,6 +8,7 @@
 #include <numeric>
 #include <concepts>
 #include <optional>
+#include <omp.h>
 
 #include "types/solver.h"
 #include "types/ga_config.h"
@@ -19,7 +20,6 @@ namespace HFT {
 
     struct FitnessPair {
         double fitness;
-        std::optional<Chromosome> repaired_chromosome;
         std::vector<std::size_t> selected_edges;
     };
 
@@ -72,20 +72,22 @@ protected:
         compute_population_fitness();
         compute_next_gen_parents();
 
-        #pragma omp parallel for
-        for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
-            m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
-            m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
+        #pragma omp parallel
+        {
+            seed_thread_local(m_config.seed);
 
-            auto& parent1 = m_next_pop_buffer[i];
-            auto& parent2 = m_next_pop_buffer[i + 1];
-            
-            crossover(parent1, parent2);
-            mutate(parent1);
-            mutate(parent2);
+            #pragma omp for schedule(static)
+            for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
+                m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
+                m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
 
-            repair(parent1);
-            repair(parent2);
+                auto& parent1 = m_next_pop_buffer[i];
+                auto& parent2 = m_next_pop_buffer[i + 1];
+                
+                crossover(parent1, parent2);
+                mutate(parent1);
+                mutate(parent2);
+            }
         }
 
         std::swap(m_cur_pop_buffer, m_next_pop_buffer);
@@ -100,7 +102,7 @@ protected:
             double thread_best_profit = std::numeric_limits<double>::lowest();
             std::vector<std::size_t> thread_best_edges;
 
-            #pragma omp for
+            #pragma omp for schedule(dynamic)
             for (std::size_t i = 0; i < m_config.population_size; ++i) {
                 HFT::FitnessPair result = get_chromosome_fitness(m_cur_pop_buffer[i]);
                 m_cur_pop_fitness[i] = std::max(result.fitness, 0.0);
@@ -132,20 +134,13 @@ protected:
         }
     }
 
-    void repair(HFT::Chromosome& chromosome) {
-        HFT::FitnessPair result = get_chromosome_fitness(chromosome);
-        if (result.repaired_chromosome.has_value()) {
-            chromosome = std::move(result.repaired_chromosome.value());
-        }
+    void seed_thread_local(unsigned long long base_seed) {
+        int tid = omp_get_thread_num();
+        m_gen.seed(base_seed + tid);
     }
 
     void compute_next_gen_parents() {
-        m_strategy.run(m_cur_pop_fitness, m_next_gen_parents, get_gen());
-    }
-    
-    std::mt19937& get_gen() {
-        static thread_local std::mt19937 generator{ m_config.seed };
-        return generator;
+        m_strategy.run(m_cur_pop_fitness, m_next_gen_parents, m_gen);
     }
     
     std::vector<std::size_t> m_next_gen_parents;
@@ -157,6 +152,7 @@ protected:
     SelectionStrategy m_strategy{};
     
     double m_best_profit{ std::numeric_limits<double>::lowest() };
+    static inline thread_local std::mt19937 m_gen{};
 
 private:
     GASolver(const HFT::Graph& graph, 
