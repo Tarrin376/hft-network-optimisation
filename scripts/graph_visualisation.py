@@ -1,7 +1,7 @@
-import pandas as pd
 from pyvis.network import Network
-import os
+import pandas as pd
 import argparse
+import os
 
 def visualize_network(nodes_csv, edges_csv, requests_csv, answer_csv, output_html="network.html"):
     base_path = os.path.dirname(__file__)

@@ -62,7 +62,7 @@ Below is the complete list of available flags. When providing a file name, ensur
     The filename for the edges input (CSV).
 *   `--requests`, `-r`  
     **Type:** String  
-    The filename for the commodity flow requests (CSV).
+    The filename for the expected order opportunity requests (CSV).
 *   `--record`  
     **Type:** String  
     The filename used to output and record the selected leased edges.
@@ -70,8 +70,8 @@ Below is the complete list of available flags. When providing a file name, ensur
 #### Solver & Environment Settings
 *   `--algorithm`, `-a`  
     **Type:** String  
-    Specifies the solver to use. Options are `brute-force`, `link-based-ga`, `path-based-ga`, and `milp`
-*   `--maxlatency`, `-l`
+    Specifies the solver to use. Options are `brute-force`, `link-based-ga`, `path-based-ga`, and `milp`.
+*   `--maxlatency`, `-l`  
     **Type:** Double  
     The maximum permissible latency for any path in the solution.
 *   `--seed`  
@@ -117,7 +117,7 @@ Below is the complete list of available flags. When providing a file name, ensur
       --population 100 \
       --generations 500 \
       --num-shortest-paths 40 \
-      --maxlatency 125.5
+      --maxlatency 70
 
 # Running Link-Based GA
 ./HFT -n test_nodes.csv -e test_edges.csv -r test_requests.csv \
@@ -125,13 +125,13 @@ Below is the complete list of available flags. When providing a file name, ensur
       --population 100 \
       --generations 500 \
       --initial-bit-flip-rate 0.09 \
-      --maxlatency 125.5
+      --maxlatency 70
 
 # Running SCIP MILP Solver
 ./HFT -n test_nodes.csv -e test_edges.csv -r test_requests.csv \
       --algorithm milp \
       --solver-id SCIP \
-      --maxlatency 125.5
+      --maxlatency 70
 ```
 
 ## Input File Formats (CSV)
@@ -144,7 +144,7 @@ This file defines the vertices in the network and identifies which nodes act as 
 | Column | Description |
 | :--- | :--- |
 | `NodeId` | Unique integer identifier for the node. |
-| `IsServer` | Boolean-style integer (`1` for Server, `0` for Client/Exchange). |
+| `IsServer` | Boolean-style integer (`1` for Server, `0` for Exchange). |
 
 **Example (`nodes.csv`):**
 ```csv
@@ -206,3 +206,27 @@ Server,Exchange,NumOrders,PlanningHorizon,MaxOrderProfit
 0,7,11,24,450
 0,8,13,20,700
 ```
+
+## Network Visualiser
+
+The project includes a Python-based visualiser that generates an interactive HTML graph. This tool highlights the leased edges in pink while showing the rest of the network in grey.
+
+### Setup Instructions
+```bash
+# Move into the `scripts` directory
+> cd scripts
+# Create a virtual environment using virtualenv
+> virtualenv <virtual env name>
+# Activate the virtual environment (Linux)
+> source ./venv/bin/activate
+# Install required dependencies from `requirements.txt`
+> pip install -r requirements.txt
+# Run the visualiser, specifying the nodes, edges, requests, and answer CSV files
+> python graph_visualisation.py -n test_nodes -e test_edges -r test_requests -a test_answer
+# Open the generated `network.html` file
+> open ./network.html
+```
+
+### Graph Visualisation Example of Test Graph
+
+![Example Graph Visualisation](example_graph_vis.png)
