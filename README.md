@@ -1,6 +1,6 @@
 # hft-network-optimization
 
-## Paper
+## Paper Title
 
 Balancing Cost, Latency, and Capacity: Network Optimisation for High-Frequency Trading
 
