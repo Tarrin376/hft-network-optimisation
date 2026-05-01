@@ -39,7 +39,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
             m_generator->get_config().max_latency,
             num_shortest_paths,
             false,
-            HFT::PathPoolStrategy::KSP_ONLY
+            HFT::PathPoolStrategy::LOCAL_DIVERSIFIED
         };
 
         double profit = solver.solve();
@@ -91,4 +91,4 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
 BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
    ->Apply(SolverFixture::ScalingArguments)
    ->Unit(benchmark::kMillisecond)
-   ->Iterations(30);
+   ->Iterations(1);
