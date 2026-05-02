@@ -9,7 +9,7 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
-SelectionEvaluator::SelectionEvaluator(double max_latency, const HFT::Graph& graph, const HFT::ExpectedRequests& requests) 
+SelectionEvaluator::SelectionEvaluator(const HFT::Graph& graph, const HFT::ExpectedRequests& requests, double max_latency) 
 : m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
 , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
 , m_path_flow(graph.get_num_edges(), 0)

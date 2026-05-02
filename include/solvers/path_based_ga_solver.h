@@ -21,12 +21,32 @@ namespace HFT {
     };
 }
 
+/**
+ * A Genetic Algorithm solver that optimises request routing using a pre-computed 
+ * pool of candidate paths.
+ * 
+ * This class implements a path-based approach where chromosomes represent 
+ * indices into a path pool rather than graph edges. It supports multiple 
+ * strategies for path pool initialisation and population diversification.
+ * 
+ * Inherits from GASolver using the Curiously Recurring Template Pattern (CRTP).
+ */
 class PathBasedGASolver final : public GASolver<PathBasedGASolver, StochasticUniversalSampling> {
 public:
     friend class GASolver<PathBasedGASolver, StochasticUniversalSampling>;
 
+    // A 2D collection where PathPool[request_index][path_index] returns a Path.
     using PathPool = std::vector<std::vector<KShortestPathFinder::Path>>;
 
+    /**
+     * @param graph The network topology.
+     * @param requests The set of order opportunity requests to be routed.
+     * @param config GA-specific hyperparameters (mutation rate, etc.).
+     * @param max_latency The maximum acceptable latency considered acceptable by the firm.
+     * @param num_shortest_paths Number of candidate paths (k) per request.
+     * @param record_selected_edges Whether to log final edge selections.
+     * @param path_pool_strategy Strategy used to populate the path pool.
+     */
     PathBasedGASolver(const HFT::Graph& graph, 
                       const HFT::ExpectedRequests& requests, 
                       const HFT::GAConfig& config,
@@ -38,16 +58,22 @@ public:
     const PathPool& get_path_pool();
 
 private:
+    // Tracks penalties and order throughput for a specific path candidate.
     struct PathPenalty {
         double penalty{};
         int processed_orders{};
     };
 
+    /**
+     * Thread-local optimisation struct to avoid repeated allocations during 
+     * fitness evaluations across multiple threads.
+     */
     struct Scratchpad {
         std::vector<int> path_flow;
         std::vector<std::uint64_t> used_edges;
         std::vector<std::size_t> dirty_indices;
 
+        // Resizes buffers if the current graph size exceeds allocated capacity.
         void ensure_capacity(std::size_t num_edges) {
             if (path_flow.size() < num_edges) {
                 path_flow.assign(num_edges, 0);
@@ -57,16 +83,19 @@ private:
         }
     };
 
+    // GA Lifecycle and Operators
     bool build_initial_population();
     void mutate(HFT::Chromosome& offspring);
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2);
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome);
 
+    // Path Pool Initialisation Strategies
     void initialise_path_pool(std::int32_t num_shortest_paths, HFT::PathPoolStrategy path_pool_strategy);
     void initialise_local_diversified_path_pool(std::int32_t num_shortest_paths);
     void initialise_ksp_only_path_pool(std::int32_t num_shortest_paths);
     void initialise_global_penalty_path_pool(std::int32_t num_shortest_paths);
 
+    // Population Construction
     void build_greedy_group(std::size_t start_idx, std::size_t end_idx);
     void build_edge_sharing_group(std::size_t start_idx, std::size_t end_idx);
     void build_random_group(std::size_t start_idx, std::size_t end_idx);

@@ -229,4 +229,4 @@ The project includes a Python-based visualiser that generates an interactive HTM
 
 ### Graph Visualisation Example of Test Graph
 
-![Example Graph Visualisation](example_graph_vis.png)
+![Example Graph Visualisation](graph_visualisation_example.png)

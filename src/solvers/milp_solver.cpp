@@ -36,11 +36,14 @@ double MILPSolver::solve() {
         return std::numeric_limits<double>::lowest();
     }
 
+    // Objective value from OR-Tools reflects the penalised profit and costs.
+    // We add back the base profits to get the actual total profit.
     double total_profit = m_objective_func->Value();
     for (const auto& request : m_requests) {
         total_profit += request.max_order_profit * request.num_orders;
     }
 
+    // Extract activated edges from binary decision variables if recording is enabled.
     if (m_record_selected_edges) {
         for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
             bool is_selected = m_edge_vars[i]->solution_value();
@@ -86,6 +89,7 @@ void MILPSolver::build() {
 }
 
 void MILPSolver::build_edge_variables() {
+    // Define binary variables $y_a$ representing if edge $a$ is leased.
     for (std::size_t i = 0; i < m_graph.get_num_edges(); ++i) {
         std::string edge_label = "y" + std::to_string(i);
         m_edge_vars.emplace_back(m_solver->MakeBoolVar(edge_label));
@@ -93,6 +97,8 @@ void MILPSolver::build_edge_variables() {
 }
 
 void MILPSolver::build_flow_variables() {
+    // Define continuous variables $f_{i,a}$ representing the amount of flow 
+    // for request $i$ moving across edge $a$.
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             std::string flow_label = "f" + std::to_string(i) + "," + std::to_string(a);
@@ -127,6 +133,7 @@ void MILPSolver::apply_flow_conservation_constraints() {
 }
 
 void MILPSolver::apply_capacity_constraints() {
+    // Link capacity constraints. This ensures flow only exists on leased edges and respects bandwidth.
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             or_tools::MPConstraint* const cap_con = m_solver->MakeRowConstraint(-or_tools::MPSolver::infinity(), 0.0);
@@ -141,7 +148,7 @@ void MILPSolver::apply_capacity_constraints() {
 void MILPSolver::build_objective_function() {
     m_objective_func = m_solver->MutableObjective();
 
-    // Latency Penalty Term
+    // Latency Penalty: Models the loss of profit due to higher latency paths.
     for (std::size_t i = 0; i < m_requests.size(); ++i) {
         for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
             double edge_latency = m_graph.get_edge(a).latency;
@@ -150,7 +157,7 @@ void MILPSolver::build_objective_function() {
         }
     }
 
-    // Cost Term
+    // Cost Term: Subtracts the leasing cost of every activated edge.
     for (std::size_t a = 0; a < m_graph.get_num_edges(); ++a) {
         double cost_a = m_graph.get_edge(a).lease_cost;
         m_objective_func->SetCoefficient(m_edge_vars[a], -cost_a);

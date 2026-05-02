@@ -33,6 +33,18 @@ namespace HFT {
     };
 }
 
+/**
+ * A generic base class for Genetic Algorithm (GA) solvers using the Curiously 
+ * Recurring Template Pattern (CRTP).
+ * 
+ * This class provides the core evolutionary loop, including parallel fitness 
+ * evaluation and reproduction using OpenMP. Derived classes must implement 
+ * the specific genetic operators (mutation, crossover, etc.).
+ * 
+ * @tparam T The derived solver class (CRTP).
+ * @tparam SelectionStrategy A strategy class satisfying IsSelectionStrategy 
+ *         concept to handle parent selection.
+ */
 template <typename T, HFT::IsSelectionStrategy SelectionStrategy>
 class GASolver : public Solver {
 public:
@@ -52,18 +64,36 @@ public:
     }
 
 protected:
+    /**
+     * Dispatches to the derived class to generate the initial population.
+     * @return True if the population was successfully initialised with valid chromosomes.
+     */
     bool build_initial_population() {
         return static_cast<T*>(this)->build_initial_population();
     }
 
+    /**
+     * Dispatches to the derived class to apply mutation logic.
+     * @param offspring The chromosome to be modified in-place.
+     */
     void mutate(HFT::Chromosome& offspring) {
         return static_cast<T*>(this)->mutate(offspring);
     }
 
+    /**
+     * Dispatches to the derived class to combine parent chromosomes to form offspring.
+     * @param parent1 The first parent chromosome.
+     * @param parent2 The second parent chromosome.
+     */
     void crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
         return static_cast<T*>(this)->crossover(parent1, parent2);
     }
 
+    /**
+     * Dispatches to the derived class to calculate fitness and track activated edges.
+     * @param chromosome The chromosome to evaluate.
+     * @return A pair containing the profit/fitness and selected edge indices (optional).
+     */
     HFT::FitnessPair get_chromosome_fitness(const HFT::Chromosome& chromosome) {
         return static_cast<T*>(this)->get_chromosome_fitness(chromosome);
     }
@@ -78,6 +108,7 @@ protected:
 
             #pragma omp for schedule(static)
             for (std::size_t i = 0; i < m_config.population_size - 1; i += 2) {
+                // Transfer selected parents to the next generation buffer.
                 m_next_pop_buffer[i] = m_cur_pop_buffer[m_next_gen_parents[i]];
                 m_next_pop_buffer[i + 1] = m_cur_pop_buffer[m_next_gen_parents[i + 1]];
 
@@ -90,6 +121,7 @@ protected:
             }
         }
 
+        // Move next generation to current for the next iteration.
         std::swap(m_cur_pop_buffer, m_next_pop_buffer);
     }
 
@@ -126,6 +158,7 @@ protected:
             }
         }
 
+        // Update the global best result if the current generation improved upon it.
         if (gen_best_profit > m_best_profit) {
             m_best_profit = gen_best_profit;
             if (m_record_selected_edges) {
@@ -134,6 +167,10 @@ protected:
         }
     }
 
+    /**
+     * Seeds the thread-local PRNG based on the global seed and thread ID 
+     * to ensure deterministic but independent random sequences across threads.
+     */
     void seed_thread_local(unsigned long long base_seed) {
         int tid = omp_get_thread_num();
         m_gen.seed(base_seed + tid);

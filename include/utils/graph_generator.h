@@ -9,6 +9,10 @@
 #include "types/expected_requests.h"
 #include "types/graph.h"
 
+/**
+ * This class creates randomised but constrained network topologies,
+ * including nodes, directed edges, and expected order requests.
+ */
 class GraphGenerator {
 public:
     GraphGenerator(const HFT::GraphGenConfig& config);
@@ -23,7 +27,15 @@ private:
     void generate_nodes();
     void generate_edges();
 
+    /**
+     * Validates if a directed edge can be placed between two nodes.
+     * Checks for self-loops and ensures the directed pair does not already exist in 'm_used_edges'.
+     * @param from The source node index.
+     * @param to The destination node index.
+     * @return True if the edge is unique and valid.
+     */
     bool is_valid_edge(std::size_t from, std::size_t to);
+
     void create_edge(std::size_t from, std::size_t to, std::size_t edge_id);
     void assign_servers();
 

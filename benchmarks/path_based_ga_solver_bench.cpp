@@ -91,4 +91,4 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
 BENCHMARK_REGISTER_F(SolverFixture, PathBasedGA)
    ->Apply(SolverFixture::ScalingArguments)
    ->Unit(benchmark::kMillisecond)
-   ->Iterations(1);
+   ->Iterations(30);

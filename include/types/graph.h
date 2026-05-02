@@ -4,6 +4,13 @@
 #include <vector>
 #include <cstdint>
 
+/**
+ * Core network topology structures and container for the HFT simulation.
+ * 
+ * This namespace defines the components of the trading network, 
+ * modelling it as a directed graph where nodes represent servers or exchanges 
+ * and edges represent cross-connect links.
+ */
 namespace HFT {
     struct Edge {
         std::size_t id{};
