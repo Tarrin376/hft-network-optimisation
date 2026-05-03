@@ -31,7 +31,7 @@ bool LinkBasedGASolver::build_initial_population() {
         }
     }
 
-    // Inject one fully randomised chromosome to maintain high initial diversity.
+    // Add one fully randomised chromosome to maintain high initial diversity.
     HFT::Chromosome random((num_edges + 63) / 64);
     for (std::size_t i = 0; i < num_edges; ++i) {
         if (RandomUtils::get_random_double(0.0, 1.0, m_gen) < 0.5) {
@@ -54,7 +54,7 @@ void LinkBasedGASolver::mutate(HFT::Chromosome& offspring) {
         std::size_t block_idx = current_bit / 64;
         std::size_t bit_idx = current_bit % 64;
 
-        // Flip the bit at the calculated position.
+        // Mutate (flip) the bit at the calculated position.
         offspring[block_idx] ^= (1ULL << bit_idx);
 
         // Calculate the jump to the next mutation point.

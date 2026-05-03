@@ -56,6 +56,7 @@ std::unique_ptr<HFT::Graph> ObjectParser::parseGraph(const std::string& nodes_fi
         edge_id++;
     }
 
+    // Construct the graph and populate it with the parsed topology.
     std::unique_ptr<HFT::Graph> graph{ std::make_unique<HFT::Graph>(nodes.size(), edges.size()) };
 
     for (const auto& node : nodes) {
@@ -103,6 +104,8 @@ HFT::Config ObjectParser::parseArgs(int argc, char* argv[]) {
     const std::string file_prefix{ "../data_files/" };
     HFT::Config config{};
 
+    // Argument parsing loop to populate the solver configuration.
+    // Note: Expects interleaved flags and values (e.g., --nodes nodes.csv).
     for (int i = 0; i < argc; ++i) {
         std::string arg = argv[i];
 

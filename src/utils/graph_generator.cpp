@@ -41,11 +41,13 @@ void GraphGenerator::generate() {
 
 void GraphGenerator::generate_requests() {
     for (std::size_t i = 0; i < m_config.num_requests; ++i) {
+        // Selection: Source must be a node designated as a server.
         std::size_t server = static_cast<std::size_t>(m_node_dist(m_gen));
         while (!m_graph.get_node(server).is_server) {
             server = static_cast<std::size_t>(m_node_dist(m_gen));
         }
 
+        // Selection: Destination (exchange) must not be a server.
         std::size_t exchange = static_cast<std::size_t>(m_node_dist(m_gen));
         while (m_graph.get_node(exchange).is_server) {
             exchange = static_cast<std::size_t>(m_node_dist(m_gen));
@@ -85,6 +87,7 @@ void GraphGenerator::generate_edges() {
 }
 
 bool GraphGenerator::is_valid_edge(std::size_t from, std::size_t to) {
+    // Self-loops are prohibited in the graph.
     if (from == to) {
         return false;
     }
@@ -92,6 +95,7 @@ bool GraphGenerator::is_valid_edge(std::size_t from, std::size_t to) {
     const auto& source = m_graph.get_node(from);
     const auto& dest = m_graph.get_node(to);
 
+    // Servers act as traffic origins. We prevent edges that terminate at a server.
     if ((source.is_server && dest.is_server) || (!source.is_server && dest.is_server)) {
         return false;
     }
@@ -118,6 +122,7 @@ void GraphGenerator::assign_servers() {
     while (remaining_servers > 0) {
         std::size_t node_id = static_cast<std::size_t>(m_node_dist(m_gen));
         if (!m_graph.get_node(node_id).is_server) {
+            // Overwrite the existing node with a server-enabled version.
             m_graph.add_node({ node_id, true });
             remaining_servers--;
         }

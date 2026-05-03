@@ -19,6 +19,7 @@ void KSPTrie::insert(const std::vector<std::size_t>& edge_indices) {
             }
         }
 
+        // If the edge path doesn't exist yet, branch the trie.
         if (!next) {
             auto new_node = std::make_unique<KSPNode>();
             new_node->edge_id = edge_id;
@@ -30,6 +31,7 @@ void KSPTrie::insert(const std::vector<std::size_t>& edge_indices) {
         cur = next;
     }
 
+    // Mark the end of a unique path to allow for exact match lookups.
     cur->is_leaf = true;
 }
 
@@ -40,6 +42,7 @@ const std::vector<std::unique_ptr<KSPTrie::KSPNode>>* KSPTrie::find_matching_out
         const auto& children = cur->children;
         KSPNode* edge = get_matching_edge(children, edge_id);
         
+        // If the prefix isn't in the trie, no paths branch from this specific root.
         if (!edge) {
             return nullptr;
         }
@@ -47,6 +50,8 @@ const std::vector<std::unique_ptr<KSPTrie::KSPNode>>* KSPTrie::find_matching_out
         cur = edge;
     }
     
+    // Return the children of the final node in the prefix, representing all 
+    // edges that have previously been used as deviations from this point.
     return &cur->children;
 }
 
@@ -64,8 +69,9 @@ bool KSPTrie::exists_exact_match(const std::vector<std::size_t>& edge_indices) {
         cur = edge;
     }
     
+    // A path only exists if the final node was explicitly marked as a leaf.
     return cur->is_leaf;
-} 
+}
 
 KSPTrie::KSPNode* KSPTrie::get_matching_edge(const std::vector<std::unique_ptr<KSPNode>>& children, std::size_t edge_id) {
     for (const auto& child : children) {
@@ -75,7 +81,7 @@ KSPTrie::KSPNode* KSPTrie::get_matching_edge(const std::vector<std::unique_ptr<K
     }
     
     return nullptr;
-} 
+}
 
 void KSPTrie::reset() {
     m_root = std::make_unique<KSPNode>();

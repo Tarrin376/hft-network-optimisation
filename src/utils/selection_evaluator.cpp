@@ -13,7 +13,6 @@ SelectionEvaluator::SelectionEvaluator(const HFT::Graph& graph, const HFT::Expec
 : m_min_latency_buffer(graph.get_num_nodes(), std::numeric_limits<double>::max())
 , m_parent_edge_buffer(graph.get_num_nodes(), nullptr)
 , m_path_flow(graph.get_num_edges(), 0)
-, m_used_edges((graph.get_num_edges() + 63) / 64, 0)
 , m_max_latency{ max_latency }
 , m_graph{ graph }
 , m_requests{ requests } {}
@@ -22,13 +21,18 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
     std::size_t num_edges{ m_graph.get_num_edges() };
     double total_profit{ 0.0 };
 
+    // Reset path flows for a fresh evaluation of the provided 'selected_edges'.
     m_path_flow.assign(m_graph.get_num_edges(), 0);
-    m_used_edges.assign(m_used_edges.size(), 0);
 
     for (const auto& request : m_requests) {
         int remaining_orders = request.num_orders;
+
+        // Attempt to route all orders for the current request through the 
+        // selected sub-graph using a greedy shortest-path flow approach.
         while (remaining_orders > 0) {
             int processed_orders = update_path_flow(request, selected_edges, remaining_orders);
+
+            // If no path is found for a required request, the selection is invalid.
             if (processed_orders == 0) {
                 return std::numeric_limits<double>::lowest();
             }
@@ -36,27 +40,26 @@ double SelectionEvaluator::evaluate(const std::vector<std::uint64_t>& selected_e
             remaining_orders -= processed_orders;
         }
 
+        // Calculate latency penalties for the routed flow.
         for (std::size_t i = 0; i < num_edges; ++i) {
             if (edge_is_selected(i, selected_edges)) {
                 const auto& edge = m_graph.get_edge(i);
                 double penalty = m_path_flow[i] * request.max_order_profit * (edge.latency / m_max_latency);
                 total_profit -= penalty;
-
-                if (m_path_flow[i] > 0) {
-                    m_used_edges[i / 64] |= (1ULL << (i % 64));
-                }
             }
         }
 
         m_path_flow.assign(m_graph.get_num_edges(), 0);
     }
 
+    // Deduct fixed lease costs for all activated edges.
     for (std::size_t i = 0; i < num_edges; ++i) {
         if (edge_is_selected(i, selected_edges)) {
             total_profit -= m_graph.get_edge(i).lease_cost;
         }
     }
 
+    // Add the gross potential profit from all processed requests.
     for (const auto& request : m_requests) {
         total_profit += request.max_order_profit * request.num_orders;
     }
@@ -90,6 +93,7 @@ int SelectionEvaluator::update_path_flow(const HFT::Request& request,
 
         const auto& node = m_graph.get_node(current.second);
         for (const auto& edge_index : node.outgoing_edges) {
+            // Ignore edges not present in the current individual's chromosome.
             if (!edge_is_selected(edge_index, selected_edges)) {
                 continue;
             }
@@ -117,14 +121,17 @@ int SelectionEvaluator::process_orders(const HFT::Request& request, int remainin
     const HFT::Edge* cur_edge{ m_parent_edge_buffer[request.exchange] };
     int min_rate_limit{ cur_edge->rate_limit };
 
+    // Determine the bottleneck capacity along the identified path.
     while (cur_edge) {
         min_rate_limit = std::min(min_rate_limit, cur_edge->rate_limit);
         cur_edge = m_parent_edge_buffer[cur_edge->source];
     }
 
+    // Calculate how many orders can be pushed through this specific path.
     int processed_orders{ std::min(remaining_orders, min_rate_limit * request.planning_horizon) };
     cur_edge = m_parent_edge_buffer[request.exchange];
 
+    // Update cumulative flow on the path edges.
     while (cur_edge) {
         m_path_flow[cur_edge->id] += processed_orders;
         cur_edge = m_parent_edge_buffer[cur_edge->source];
@@ -135,8 +142,4 @@ int SelectionEvaluator::process_orders(const HFT::Request& request, int remainin
 
 bool SelectionEvaluator::edge_is_selected(std::size_t edge_index, const std::vector<std::uint64_t>& selected_edges) const {
     return selected_edges[edge_index / 64] & (1ULL << (edge_index % 64));
-}
-
-const std::vector<std::uint64_t>& SelectionEvaluator::get_used_edges() const {
-    return m_used_edges;
 }

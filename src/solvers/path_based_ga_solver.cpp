@@ -29,6 +29,7 @@ PathBasedGASolver::PathBasedGASolver(const HFT::Graph& graph,
 }
 
 bool PathBasedGASolver::build_initial_population() {
+    // Ensure every request has at least one candidate path.
     auto empty_paths{ std::ranges::find_if(m_path_pool, [](const auto& paths) -> bool {
         return paths.empty();
     }) };
@@ -61,6 +62,7 @@ void PathBasedGASolver::mutate(HFT::Chromosome& offspring) {
 }
 
 void PathBasedGASolver::crossover(HFT::Chromosome& parent1, HFT::Chromosome& parent2) {
+    // Uniform crossover: swaps individual path choices between parents.
     for (std::size_t i = 0; i < parent1.size(); ++i) {
         std::uint64_t mask = 1ULL;
         for (int j = 0; j < 64; ++j) {
@@ -91,6 +93,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
         double request_profit = request.max_order_profit * request.num_orders;
         std::uint64_t mask = 1ULL;
 
+        // Evaluate selected paths for the current request in increasing order of cost for greedy order routing.
         for (int j = 0; j < m_path_pool[i].size(); ++j) {
             if (chromosome[i] & mask) {
                 PathPenalty path_penalty = get_path_penalty(m_path_pool[i][j], request, remaining_orders);
@@ -104,6 +107,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
         m_t_scratch.path_flow.assign(m_t_scratch.path_flow.size(), 0);
         total_profit += request_profit;
 
+        // If a request cannot be fully routed, the chromosome is invalid.
         if (remaining_orders > 0) {
             is_valid_solution = false;
             break;
@@ -112,6 +116,7 @@ HFT::FitnessPair PathBasedGASolver::get_chromosome_fitness(const HFT::Chromosome
 
     for (auto edge_id : m_t_scratch.dirty_indices) {
         total_profit -= m_graph.get_edge(edge_id).lease_cost;
+        // Reset bitset for the next chromsome fitness evaluation.
         m_t_scratch.used_edges[edge_id / 64] &= ~(1ULL << (edge_id % 64));
     }
     
@@ -152,10 +157,12 @@ void PathBasedGASolver::initialise_local_diversified_path_pool(std::int32_t num_
         #pragma omp for schedule(dynamic)
         for (std::size_t i = 0; i < m_requests.size(); ++i) {
             const auto& req = m_requests[i];
+            bool is_first_path{ true };
+
             ksp_finder.clear_globally_disabled_edges(); 
             m_path_pool[i] = std::move(ksp_finder.find_paths(req.server, req.exchange, num_shortest_paths));
-            
-            bool is_first_path{ true };
+
+            // Iteratively disable used edges to force search for disjoint paths.
             while (m_path_pool[i].size() < 64) {
                 auto best_path = std::move(ksp_finder.find_paths(req.server, req.exchange, 1));
                 if (best_path.empty()) {
@@ -191,8 +198,11 @@ void PathBasedGASolver::initialise_ksp_only_path_pool(std::int32_t num_shortest_
 }
 
 void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_shortest_paths) {
+    // Phase 1: Standard KSP for the primary pool.
     initialise_ksp_only_path_pool(num_shortest_paths);
 
+    // Phase 2: Identify "congested" edges across all requests and artificially 
+    // increase their latency to encourage path diversity in the secondary pool.
     std::vector<std::uint32_t> edge_popularities(m_graph.get_num_edges(), 0);
     HFT::Graph modified_graph{ m_graph };
     
@@ -223,6 +233,7 @@ void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_sho
         }
     }
 
+    // Apply latency penalties to the top 5% most popular edges.
     while (pq.size() > 0) {
         std::size_t edge_id = pq.top();
         const auto& edge = modified_graph.get_edge(edge_id);
@@ -232,6 +243,7 @@ void PathBasedGASolver::initialise_global_penalty_path_pool(std::int32_t num_sho
         pq.pop();
     }
 
+    // Phase 3: Find additional paths using the penalised graph.
     #pragma omp parallel 
     {
         KShortestPathFinder ksp_finder{ modified_graph };
@@ -278,11 +290,12 @@ void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::siz
             for (auto e : backbone.edge_indices) {
                 edge_versions[e] = current_version;
             }
-
+            
             for (std::size_t j = 0; j < m_requests.size(); ++j) {
                 std::size_t best_path_idx = 0;
                 int max_overlap = -1;
-
+                
+                // Select path that maximise overlap with the anchor backbone.
                 for (std::size_t k = 0; k < m_path_pool[j].size(); ++k) {
                     int current_overlap = 0;
                     for (const auto& edge : m_path_pool[j][k].edge_indices) {
@@ -297,6 +310,7 @@ void PathBasedGASolver::build_edge_sharing_group(std::size_t start_idx, std::siz
                     }
                 }
 
+                // Enable the path that overlaps the most with the anchor backbone.
                 m_cur_pop_buffer[i][j] |= (1ULL << best_path_idx);
             }
         }
@@ -336,6 +350,7 @@ PathBasedGASolver::PathPenalty PathBasedGASolver::get_path_penalty(const KShorte
         const auto& edge = m_graph.get_edge(edge_id);
         double penalty = processed_orders * request.max_order_profit * (edge.latency / m_max_latency);
 
+        // If this edge is new to this specific evaluation, mark it for cost deduction.
         if (!(m_t_scratch.used_edges[edge_id / 64] & (1ULL << (edge_id % 64)))) {
             m_t_scratch.dirty_indices.push_back(edge_id);
         }

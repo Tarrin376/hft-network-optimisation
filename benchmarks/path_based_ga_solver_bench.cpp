@@ -80,7 +80,7 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
 
         const auto& path_pool = recorder.get_path_pool();
-        state.counters["Intra-Pool Similarity"] = (successes > 0) ? (profit_sum / successes) : best_profit;
+        state.counters["Intra-Pool Similarity"] = StatisticsUtils::intra_pool_mean_jaccard_similarity(path_pool);
     }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : best_profit;

@@ -37,6 +37,8 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
     m_ksp_trie.insert(path.edge_indices);
     pq.push(std::move(path));
 
+    // Yen's Algorithm: Iteratively find the next shortest path by branching off
+    // deviation nodes (spur nodes) from previously found shortest paths.
     for (int i = 0; i < num_shortest_paths && !pq.empty(); ++i) {
         m_shortest_paths.push_back(std::move(pq.top()));
         pq.pop();
@@ -54,6 +56,7 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
             const auto& edge = m_graph.get_edge(edge_id);
             std::size_t spur_node = edge.source;
 
+            // Disable edges that have already been part of a shortest path starting with the same root.
             disable_matching_outgoing_edges();
             Path spur_path = dijkstra(spur_node, dest);
 
@@ -73,6 +76,7 @@ std::vector<KShortestPathFinder::Path>& KShortestPathFinder::find_paths(std::siz
                 }
             }
 
+            // Progress the root path and disable nodes to prevent cycles in the spur path.
             m_root_path_edges.push_back(edge_id);
             root_latency += edge.latency;
 
@@ -129,6 +133,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
         for (const auto& edge_id : node.outgoing_edges) {
             const auto& edge = m_graph.get_edge(edge_id);
 
+            // Skip edges/nodes deactivated by Yen's Algorithm or global constraints.
             if (edge_is_disabled(edge_id) || node_is_disabled(edge.dest)) {
                 continue;
             }
@@ -152,6 +157,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
         return {};
     }
 
+    // Path reconstruction: Traverse parent pointers from destination to source.
     const HFT::Edge* cur_edge{ m_parent_edge_buffer[dest] };
     Path path{};
 
@@ -167,6 +173,7 @@ KShortestPathFinder::Path KShortestPathFinder::dijkstra(std::size_t source, std:
 }
 
 void KShortestPathFinder::disable_matching_outgoing_edges() {
+    // Finds all edges that would replicate an existing shortest path if selected as the next spur edge.
     const auto* outgoing_edges{ m_ksp_trie.find_matching_outgoing_edges(m_root_path_edges) };
     if (!outgoing_edges) {
         return;

@@ -13,7 +13,7 @@
  * This class acts as the "inner loop" for both Genetic (Link-Based) and Brute Force solvers.
  * It simulates the routing of expected order requests through a subset of activated 
  * edges using the Successive Shortest Path Algorithm, while accounting for rate 
- * limits and path latency constraints to determine the total achievable profit.
+ * limits and path latency constraints to determine the total profit.
  */
 class SelectionEvaluator final {
 public:
@@ -31,13 +31,10 @@ public:
      */
     double evaluate(const std::vector<std::uint64_t>& selected_edges);
 
-    const std::vector<std::size_t>& get_used_edges() const;
-
 private:
     /**
      * Attempts to route flow for a specific request through the active network.
-     * Uses internal buffers to find the shortest feasible path and updates 
-     * residual capacities.
+     * Uses internal buffers to find the shortest feasible path and updates edge capacities.
      * @param request The specific expected order request to route.
      * @param selected_edges The current network configuration.
      * @param remaining_orders The number of orders that still need routing.
@@ -58,7 +55,6 @@ private:
     std::vector<double> m_min_latency_buffer;
     std::vector<const HFT::Edge*> m_parent_edge_buffer;
     std::vector<int> m_path_flow;
-    std::vector<std::uint64_t> m_used_edges;
 
     const double m_max_latency{};
     const HFT::Graph& m_graph;

@@ -22,6 +22,8 @@ std::vector<std::reference_wrapper<const HFT::Edge>> Solver::get_selected_edges(
     std::vector<std::reference_wrapper<const HFT::Edge>> mapped_edges{};
     mapped_edges.reserve(m_selected_edges.size());
 
+    // Transform selected edge IDs into a collection of reference wrappers to 
+    // provide a view into the graph without copying edge structures.
     std::transform(
         m_selected_edges.begin(), 
         m_selected_edges.end(), 
