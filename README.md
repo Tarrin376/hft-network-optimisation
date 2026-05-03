@@ -8,6 +8,10 @@ Balancing Cost, Latency, and Capacity: Network Optimisation for High-Frequency T
 
 This work studies a High-Frequency Trading Network Design Problem (HFT-NDP), where a trading firm must decide which cross-connects to lease between its servers and colocated exchanges in order to route orders with minimal latency, therefore maximising returns. Orders may be sent either directly to an exchange or indirectly via other exchanges, subject to latency-dependent profit and rate-limit constraints on each link. We formulate this task as a Fixed-Charge Capacitated Network Design Problem (FCCNDP) with separable commodity flows, which is NP-Hard. To address the resulting computational challenges, we develop a suite of exact and metaheuristic approaches, including two Genetic Algorithm (GA) formulations. We utilise OpenMP to allow for scalable exploration of the solution space through the use of parallelisation. Alongside this, we formulate the problem as a Mixed-Integer Linear Program (MILP) and solve it using various open-source solvers including SCIP, CBC, HiGHS, and CP-SAT, all of which are available in the Google OR-Tools C++ library. Empirical evaluation demonstrates that these approaches, particularly the Path-Based GA, efficiently produce high-quality solutions for large network instances where exact optimisation is computationally intractable.
 
+## System Architecture
+
+![System Architecture Diagram](system_arch.png)
+
 ## Reproducing Research Results
 
 This repository contains the implementation of the Genetic Algorithm and MILP solvers used in the dissertation. To ensure bit-for-bit reproducibility of the results presented, follow the environment and build specifications below.
