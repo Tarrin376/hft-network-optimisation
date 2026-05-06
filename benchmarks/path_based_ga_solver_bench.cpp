@@ -54,6 +54,13 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
         }
     }
 
+    static int id{ 0 };
+    id++;
+
+    Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
+    Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
+    Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
+
     if (best_profit > std::numeric_limits<double>::lowest()) {
         HFT::GAConfig recorder_config = solver_config;
         recorder_config.seed = best_seed;
@@ -68,16 +75,8 @@ BENCHMARK_DEFINE_F(SolverFixture, PathBasedGA)(benchmark::State& state) {
             HFT::PathPoolStrategy::LOCAL_DIVERSIFIED
         };
 
-        double profit = recorder.solve();
         auto edges = recorder.get_selected_edges();
-
-        static int id{ 0 };
-        id++;
-
-        Logger::log_nodes(graph, "NODES_PB_GA" + std::to_string(id) + ".csv");
-        Logger::log_edges(graph, "EDGES_PB_GA" + std::to_string(id) + ".csv");
-        Logger::log_requests(requests, "REQUESTS_PB_GA" + std::to_string(id) + ".csv");
-        Logger::log_optimal_network(edges, "ANS_PB_GA" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_PB_GA_" + std::to_string(id) + ".csv");
 
         const auto& path_pool = recorder.get_path_pool();
         state.counters["Intra-Pool Similarity"] = StatisticsUtils::intra_pool_mean_jaccard_similarity(path_pool);

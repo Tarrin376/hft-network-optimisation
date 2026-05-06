@@ -6,7 +6,6 @@
 
 BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
     double best_profit{ std::numeric_limits<double>::lowest() };
-
     const HFT::Graph& graph{ m_generator->get_graph() };
     const HFT::ExpectedRequests& requests{ m_generator->get_requests() };
 
@@ -22,6 +21,13 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
         best_profit = solver.solve();
     }
 
+    static int id{ 0 };
+    id++;
+
+    Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
+    Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
+    Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
+
     if (best_profit > std::numeric_limits<double>::lowest()) {
         MILPSolver recorder{ 
             graph,
@@ -33,13 +39,6 @@ BENCHMARK_DEFINE_F(SolverFixture, MILPSolver)(benchmark::State& state) {
 
         recorder.solve();
         auto edges = recorder.get_selected_edges();
-
-        static int id{ 0 };
-        id++;
-
-        Logger::log_nodes(graph, "NODES_MILP_" + std::to_string(id) + ".csv");
-        Logger::log_edges(graph, "EDGES_MILP_" + std::to_string(id) + ".csv");
-        Logger::log_requests(requests, "REQUESTS_MILP_" + std::to_string(id) + ".csv");
         Logger::log_optimal_network(edges, "ANS_MILP_" + std::to_string(id) + ".csv");
     }
 

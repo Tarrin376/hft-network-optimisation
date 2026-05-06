@@ -48,6 +48,13 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
         }
     }
 
+    static int id{ 0 };
+    id++;
+
+    Logger::log_nodes(graph, "NODES_" + std::to_string(id) + ".csv");
+    Logger::log_edges(graph, "EDGES_" + std::to_string(id) + ".csv");
+    Logger::log_requests(requests, "REQUESTS_" + std::to_string(id) + ".csv");
+
     if (best_profit > std::numeric_limits<double>::lowest()) {
         HFT::GAConfig recorder_config = solver_config;
         recorder_config.seed = best_seed;
@@ -62,14 +69,7 @@ BENCHMARK_DEFINE_F(SolverFixture, LinkBasedGA)(benchmark::State& state) {
 
         recorder.solve();
         auto edges = recorder.get_selected_edges();
-
-        static int id{ 0 };
-        id++;
-
-        Logger::log_nodes(graph, "NODES_LB_GA" + std::to_string(id) + ".csv");
-        Logger::log_edges(graph, "EDGES_LB_GA" + std::to_string(id) + ".csv");
-        Logger::log_requests(requests, "REQUESTS_LB_GA" + std::to_string(id) + ".csv");
-        Logger::log_optimal_network(edges, "ANS_LB_GA" + std::to_string(id) + ".csv");
+        Logger::log_optimal_network(edges, "ANS_LB_GA_" + std::to_string(id) + ".csv");
     }
 
     state.counters["MeanProfit"] = (successes > 0) ? (profit_sum / successes) : best_profit;

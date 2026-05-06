@@ -3,8 +3,4 @@ build
 venv
 scripts/lib
 scripts/network.html
-data_files/ANS_*.csv
-data_files/NODES_*.csv
-data_files/EDGES_*.csv
-data_files/REQUESTS_*.csv
 *.un~
