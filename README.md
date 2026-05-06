@@ -6,7 +6,7 @@ Balancing Cost, Latency, and Capacity: Network Optimisation for High-Frequency T
 
 ## Abstract
 
-This work studies a High-Frequency Trading Network Design Problem (HFT-NDP), where a trading firm must decide which cross-connects to lease between its servers and colocated exchanges in order to route orders with minimal latency, therefore maximising returns. Orders may be sent either directly to an exchange or indirectly via other exchanges, subject to latency-dependent profit and rate-limit constraints on each link. We formulate this task as a Fixed-Charge Capacitated Network Design Problem (FCCNDP) with separable commodity flows, which is NP-Hard. To address the resulting computational challenges, we develop a suite of exact and metaheuristic approaches, including two Genetic Algorithm (GA) formulations. We utilise OpenMP to allow for scalable exploration of the solution space through the use of parallelisation. Alongside this, we formulate the problem as a Mixed-Integer Linear Program (MILP) and solve it using various open-source solvers including SCIP, CBC, HiGHS, and CP-SAT, all of which are available in the Google OR-Tools C++ library. Empirical evaluation demonstrates that these approaches, particularly the Path-Based GA, efficiently produce high-quality solutions for large network instances where exact optimisation is computationally intractable.
+This work studies a High-Frequency Trading Network Design Problem (HFT-NDP), where a trading firm must decide which cross-connects to lease between its servers and colocated exchanges in order to route orders with minimal latency, therefore maximising returns. Orders may be sent either directly to an exchange or indirectly via other exchanges, subject to latency-dependent profit and rate-limit constraints on each link. We formulate this task as a Fixed-Charge Capacitated Network Design Problem (FCCNDP) with separable commodity flows, which is NP-Hard. To address the resulting computational challenges, we develop a suite of exact and metaheuristic approaches, including two Genetic Algorithm (GA) formulations. We utilise OpenMP to allow for scalable exploration of the solution space through the use of parallelisation. Alongside this, we formulate the problem as a Mixed-Integer Linear Program (MILP) and solve it using various open-source solvers including SCIP, CBC, HiGHS, and CP-SAT. Empirical evaluation demonstrates that these approaches, particularly the Path-Based GA, efficiently produce high-quality solutions for large network instances where exact optimisation is computationally intractable.
 
 ## Solver Architecture
 
@@ -77,7 +77,7 @@ Below is the complete list of available flags. When providing a file name, ensur
     Specifies the solver to use. Options are `brute-force`, `link-based-ga`, `path-based-ga`, and `milp`.
 *   `--maxlatency`, `-l`  
     **Type:** Double  
-    The maximum permissible latency for any path in the solution.
+    The maximum latency considered acceptable by the firm.
 *   `--seed`  
     **Type:** Unsigned Long Long  
     The seed value for the PRNG to ensure reproducibility of results.
