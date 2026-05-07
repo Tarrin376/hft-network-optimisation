@@ -22,7 +22,7 @@ The benchmarks in the paper were conducted on an **Intel i9-9900k** (8-core/16-t
 * **OS:** Ubuntu 24.04.4 LTS
 * **Compiler:** GCC 13.3+
 * **C++ Version:** C++20 or newer
-* **Dependencies:** CMake 3.28.3+, OpenMP, Google Benchmark, Google Test
+* **Dependencies:** CMake 3.28.3+, OpenMP, Google Benchmark, and Google Test
 
 ### 2. Build Instructions
 
